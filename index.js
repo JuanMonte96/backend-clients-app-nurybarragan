@@ -1,0 +1,40 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import {sequelize} from './src/config/conection.js';
+import { userRoute } from './src/routes/userRoute.js';
+import { packageRoute } from './src/routes/packageRoute.js';
+
+
+console.log('Starting the server nbdance&fitness...');
+
+const app = express();
+dotenv.config();
+
+const port = process.env.SERVER_PORT || 3000; 
+    
+// conection database
+try {
+    await sequelize.authenticate();
+    console.log('Database conection has been established successfully.')
+} catch (error) {
+    console.error(`unable to connect to the database: ${error.message}`);
+}
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
+app.use('/api/users', userRoute);
+app.use('/api/packages', packageRoute);
+
+app.get('/',(req, res)=> {
+    res.json({
+        message: 'Welcome to the nury barragan dance and fitness app backend server',
+    })
+});
+
+app.listen(port, ()=>{
+    console.log(`Server listening in the port ${port}`)
+});

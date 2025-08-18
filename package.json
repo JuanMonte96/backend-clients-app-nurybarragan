@@ -1,0 +1,27 @@
+{
+  "name": "nuryb-app-backend",
+  "version": "1.0.0",
+  "description": "this is the beta app version of the nury barragan app project for the control of subscriptions for the dancing classes",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "author": "Juan Mateo Montenegro Barragán",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
+    "stripe": "^18.4.0",
+    "zod": "^4.0.10"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
