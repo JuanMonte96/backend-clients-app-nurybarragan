@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 import {sequelize} from './src/config/conection.js';
 import { userRoute } from './src/routes/userRoute.js';
 import { packageRoute } from './src/routes/packageRoute.js';
-
+import { webhookRouter } from './src/routes/webhookRoute.js';
+import { paymentsRoute } from './src/routes/paymentsRoute.js';
 
 console.log('Starting the server nbdance&fitness...');
 
@@ -28,6 +29,20 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/users', userRoute);
 app.use('/api/packages', packageRoute);
+app.use('/api/webhooks', webhookRouter);
+app.use('/api/payments', paymentsRoute);
+
+
+app.use('/success', (req,res)=>{
+    res.status(200).json({
+        message: 'Payment successful'
+    })
+})
+app.use('/cancel', (req,res)=>{
+    res.status(200).json({
+        message: 'Payment canceled'
+    })
+})
 
 app.get('/',(req, res)=> {
     res.json({
