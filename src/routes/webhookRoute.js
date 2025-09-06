@@ -3,4 +3,4 @@ import { stripeWebhookHandler } from "../controllers/webhookController.js";
 
 export const webhookRouter = express.Router();
 
-webhookRouter.post("/stripe-webhook",express.raw({type: 'application/json'}), stripeWebhookHandler);
+webhookRouter.post("/stripe-webhook", express.raw({ type: 'application/json' }),stripeWebhookHandler);

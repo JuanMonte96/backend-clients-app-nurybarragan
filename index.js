@@ -22,6 +22,8 @@ try {
     console.error(`unable to connect to the database: ${error.message}`);
 }
 
+app.use('/api/webhooks', webhookRouter);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,16 +31,15 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/users', userRoute);
 app.use('/api/packages', packageRoute);
-app.use('/api/webhooks', webhookRouter);
 app.use('/api/payments', paymentsRoute);
 
 
-app.use('/success', (req,res)=>{
+app.get('/success', (req,res)=>{
     res.status(200).json({
         message: 'Payment successful'
     })
 })
-app.use('/cancel', (req,res)=>{
+app.get('/cancel', (req,res)=>{
     res.status(200).json({
         message: 'Payment canceled'
     })

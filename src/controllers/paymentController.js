@@ -1,4 +1,5 @@
 import { createCheckoutSession } from "../services/stripe.js";
+import {db} from '../models/db.js';
 
 
 export const startPayment = async (req, res) => {
@@ -7,9 +8,11 @@ export const startPayment = async (req, res) => {
 
         const session = await createCheckoutSession(
             stripe_price_id,
-            name,
-            email,
-            id_package,
+            {
+                name,
+                email,
+                custom_id:id_package
+            },
             'http://localhost:3000/success',
             'http://localhost:3000/cancel'
         );
@@ -25,4 +28,8 @@ export const startPayment = async (req, res) => {
             message: error.message 
         });
     }
+};
+
+export const createPayment = (user,session) =>{
+    
 }

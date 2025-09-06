@@ -44,7 +44,7 @@ export const createCheckoutSession = async (priceId, customerData, successUrl, c
       name: customerData.name,
       custom_id: customerData.custom_id, // opcional: id interno tuyo
     },
-    success_url: `${successUrl}?session_id=${CHECKOUT_SESSION_ID}`,
+    success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: cancelUrl,
   });
 
