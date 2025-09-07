@@ -31,5 +31,13 @@ export const startPayment = async (req, res) => {
 };
 
 export const createPayment = (user,session) =>{
-    
+    try {
+        const id_user = user.id;
+        const amount = session.amount_total/100;
+        const external_ref = session.id;
+        const method = session.payment_method_types[0];
+
+    } catch (error) {
+        
+    }
 }

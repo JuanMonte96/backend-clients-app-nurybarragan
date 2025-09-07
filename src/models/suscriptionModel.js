@@ -1,11 +1,12 @@
-import { DataTypes } from "sequelize";
+import {  DataTypes } from "sequelize";
 import { sequelize } from "../config/conection.js";
 
-export const Payment = sequelize.define('Payment',
+export const Subscription = sequelize.define('Subscription',
     {
-        id_payment: {
+        id_subscription: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
+            allowNull: false,
             primaryKey: true
         },
         id_user: {
@@ -13,25 +14,31 @@ export const Payment = sequelize.define('Payment',
             allowNull: false,
             foreignKey: true
         },
-        id_subscription: {
-            type: DataTypes.UUID,
+        id_package: {
+            type: DataTypes.STRING,
             allowNull: false,
             foreignKey: true
         },
-        payment_amount: {
-            type: DataTypes.DECIMAL(10, 2),
+        status: {
+            type: DataTypes.ENUM('active', 'expired', 'cancelled'),
+            defaultValue: 'active'
+        },
+        start_date: {
+            type: DataTypes.DATE,
             allowNull: false
         },
-        method: {
-            type: DataTypes.STRING,
+        end_date: {
+            type: DataTypes.DATE,
             allowNull: false
         },
-        external_ref: {
+        id_payment: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: false,
+            foreignKey: true
         }
+
     }, {
-    tableName: 'payments',
+    tableName: 'subscriptions',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: false

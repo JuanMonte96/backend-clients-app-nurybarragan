@@ -1,5 +1,8 @@
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
+import { createUser } from './userController.js';
+import { sendEmail } from '../services/sendEmail.js';
+
 dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -16,18 +19,21 @@ export const stripeWebhookHandler = async (req, res) => {
     );
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      
+
       console.log('✅ Pago exitoso recibido desde Stripe');
-      console.log('Correo:', session.customer_email);
       console.log('ID de sesión:', session.id);
-      console.log('Metadata:', session.metadata);
 
       // Aquí haces tu lógica:
-      // - Crear usuario si no existe
+      const newUser = await createUser(session);
+      await sendEmail(newUser.email, newUser.nombre, newUser.password);
       // - Guardar pago
+
       // - Crear suscripción
 
-      return res.status(200).json({ received: true });
+      return res.status(200).json({ 
+        received: true, 
+        user: newUser 
+      });
     }
 
     // Otros eventos no manejados

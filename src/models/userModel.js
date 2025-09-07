@@ -18,7 +18,10 @@ export const User = sequelize.define('User',
       type: DataTypes.ENUM('student', 'teacher', 'admin'),
       defaultValue: 'student'
     },
-    medical_certificate: DataTypes.TEXT,
+    medical_certificated: {
+      type: DataTypes.TEXT,
+      defaultValue: "Defaultcertificate.pdf"
+    },
     is_blocked: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
@@ -26,8 +29,8 @@ export const User = sequelize.define('User',
   }, {
     tableName: 'users',
     timestamps: true,
-    created_at: 'created_at',
-    updated_at: 'updated_at'
+    createdAt: 'created_at',
+    updatedAt: 'update_at'
   }
 );
 
