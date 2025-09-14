@@ -13,8 +13,8 @@ export const Payment = sequelize.define('Payment',
             allowNull: false,
             foreignKey: true
         },
-        id_subscription: {
-            type: DataTypes.UUID,
+        id_package: {
+            type: DataTypes.STRING,
             allowNull: false,
             foreignKey: true
         },

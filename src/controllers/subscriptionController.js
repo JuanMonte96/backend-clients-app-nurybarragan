@@ -1,6 +1,6 @@
-import { db } from "../models/db";
+import { db } from "../models/db.js";
 
-export const createsubscription = async (user, payment,  session) => {
+export const createsubscription = async (user, payment, session) => {
     try{
         const id_user = user.id;
         const id_package = session.metadata.custom_id;
@@ -17,7 +17,7 @@ export const createsubscription = async (user, payment,  session) => {
         const end_date = new Date(start_date);
         end_date.setDate(end_date.getDate() + daysDuration);
 
-        const newSubscription = await db.Subscrition.create({
+        const newSubscription = await db.Subscription.create({
             id_user,
             id_package,
             start_date,

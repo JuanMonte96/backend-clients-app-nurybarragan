@@ -30,14 +30,33 @@ export const startPayment = async (req, res) => {
     }
 };
 
-export const createPayment = (user,session) =>{
+export const createPayment = async (user,session) =>{
     try {
         const id_user = user.id;
         const amount = session.amount_total/100;
         const external_ref = session.id;
         const method = session.payment_method_types[0];
+        const id_package = session.metadata.custom_id;
+
+        const newPayment = await db.Payment.create({
+            id_user,
+            id_package,
+            payment_amount: amount,
+            method,
+            external_ref
+        });
+
+        console.log(newPayment);
+        return ({
+            id: newPayment.id_payment,
+            id_user: newPayment.id_user,
+            package_id: newPayment.id_package,
+            amount: newPayment.payment_amount,
+            method: newPayment.method,
+            external_ref: newPayment.external_ref
+        });
 
     } catch (error) {
-        
+        throw new Error(`Error creating Payment: ${error.message}`);
     }
 }

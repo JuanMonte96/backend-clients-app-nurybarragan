@@ -11,4 +11,4 @@ db.sequelize = sequelize;
 db.User = User;
 db.Package = Package;
 db.Payment = Payment;
-db.Subscrition = Subscription;
+db.Subscription = Subscription;
