@@ -1,4 +1,3 @@
-import { id } from "zod/locales";
 import { db } from "../models/db.js";
 import { generateToken } from "../services/Jwt.js";
 import { createTempPassword } from "../services/password.js";
