@@ -1,3 +1,4 @@
+import { ca, id } from "zod/locales";
 import { db } from "../models/db.js";
 import { generateToken } from "../services/Jwt.js";
 import { createTempPassword } from "../services/password.js";
@@ -88,7 +89,7 @@ export const getAllUsers = async (req, res) => {
         console.log(db.User.getAttributes());
 
         const { count, rows } = await db.User.findAndCountAll({
-            attributes: ["id_user", "name_user", "email_user", "role","medical_certificated","is_blocked","created_at"], // selecciona columnas necesarias
+            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "created_at"], // selecciona columnas necesarias
             limit,
             offset
         });
@@ -103,3 +104,36 @@ export const getAllUsers = async (req, res) => {
         return res.status(500).json({ message: "Error al obtener usuarios", error: error.message });
     }
 };
+
+export const profileUser = async (req, res) => {
+    try {
+        const { id_user } = req.params;
+        if (req.user.id === 'admin' || req.user.id === 'teacher') {
+            const user = await db.User.findByPk(id_user, {
+                attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "created_at"]
+            })
+            if(!user){
+                return res.status(404).json({
+                    status:'Not Found',
+                    message: 'User not found'
+                })
+            }
+        }
+        if(req.user.id !== id_user){
+            return res.status(403).json({
+                status:'Forbiden',
+                message: 'Dont have permission to see this profile'
+            })
+        }
+        const user = await db.User.findByPk(id_user,{
+            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "created_at"]
+        })
+        const subscriptionByUser = await db.Subscription.findAll({where:id_user})
+    }
+    catch (error) {
+        return res.status(500).json({
+            status: 'error',
+            message: `Internal Server Error: ${error.message}`
+        })
+    }
+}
