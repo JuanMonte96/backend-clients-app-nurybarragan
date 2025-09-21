@@ -1,4 +1,4 @@
-import { ca, id } from "zod/locales";
+import { id } from "zod/locales";
 import { db } from "../models/db.js";
 import { generateToken } from "../services/Jwt.js";
 import { createTempPassword } from "../services/password.js";
@@ -108,27 +108,39 @@ export const getAllUsers = async (req, res) => {
 export const profileUser = async (req, res) => {
     try {
         const { id_user } = req.params;
-        if (req.user.id === 'admin' || req.user.id === 'teacher') {
+        if (req.user.role === 'admin' || req.user.role === 'teacher') {
             const user = await db.User.findByPk(id_user, {
                 attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "created_at"]
             })
-            if(!user){
+            if (!user) {
                 return res.status(404).json({
-                    status:'Not Found',
+                    status: 'Not Found',
                     message: 'User not found'
                 })
             }
         }
-        if(req.user.id !== id_user){
+        if (req.user.id !== id_user) {
             return res.status(403).json({
-                status:'Forbiden',
+                status: 'Forbiden',
                 message: 'Dont have permission to see this profile'
             })
         }
-        const user = await db.User.findByPk(id_user,{
+        const user = await db.User.findByPk(id_user, {
             attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "created_at"]
         })
-        const subscriptionByUser = await db.Subscription.findAll({where:id_user})
+        const subscriptionByUser = await db.Subscription.findAll({
+            where: { id_user: id_user },
+            include: [{
+                model: db.Package,
+                attributes: ["name_package", "description_package", "duration_package", "class_limit"]
+            }]
+        });
+        return res.status(200).json({
+            status: 'success',
+            message: 'User profile',
+            user: req.user,
+            subscriptionByUser
+        });
     }
     catch (error) {
         return res.status(500).json({
