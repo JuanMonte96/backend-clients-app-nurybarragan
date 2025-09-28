@@ -1,7 +1,7 @@
 import { db } from "../models/db.js";
 import { generateToken } from "../services/Jwt.js";
 import { createTempPassword } from "../services/password.js";
-import bcryt from 'bcrypt';
+import bcrypt from 'bcrypt';
 
 export const createUser = async (session) => {
 
@@ -24,14 +24,15 @@ export const createUser = async (session) => {
             id: user.id_user,
             nombre: user.name_user,
             email: user.email_user,
-            password: tempPassword
+            password: tempPassword,
+            message: 'user created'
         })
     }
     return {
         id: user.id_user,
         nombre: user.name_user,
         email: user.email_user,
-        message: 'user ya existe'
+        message: 'user already exists'
     }
 }
 
@@ -46,7 +47,7 @@ export const loginUser = async (req, res) => {
             })
         };
 
-        const isValidPassword = await bcryt.compare(password, user.password_user);
+        const isValidPassword = await bcrypt.compare(password, user.password_user);
         if (!isValidPassword) {
             return res.status(401).json({
                 status: 'Unauthorized',
@@ -57,7 +58,8 @@ export const loginUser = async (req, res) => {
         const payload = {
             id: user.id_user,
             email: user.email_user,
-            role: user.role
+            role: user.role,
+            must_change_pass: user.must_change_pass
         }
 
         const token = generateToken(payload);
@@ -117,6 +119,20 @@ export const profileUser = async (req, res) => {
                     message: 'User not found'
                 })
             }
+            const subscriptionByUser = await db.Subscription.findAll({
+                where: { id_user: id_user },
+                include: [{
+                    model: db.Package,
+                    attributes: ["name_package", "description_package", "duration_package", "class_limit"]
+                }]
+
+            });
+            return res.status(200).json({
+                status: 'success',
+                message: 'User profile',
+                user,
+                subscriptionByUser
+            });
         }
         if (req.user.id !== id_user) {
             return res.status(403).json({
@@ -147,4 +163,90 @@ export const profileUser = async (req, res) => {
             message: `Internal Server Error: ${error.message}`
         })
     }
-}
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { currentPassword, newPassword } = req.body;
+
+        const user = await db.User.findByPk(userId);
+
+        if(!user){
+            return res.status(404).json({
+                status: 'Not Found',
+                message: 'user does not exist'
+            });
+        }
+
+        const valid = await bcrypt.compare(currentPassword, user.password_user);
+        if(!valid){
+            return res.status(401).json({
+                status: 'unauthorized',
+                message: 'current password is incorrect'
+            })
+        };
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        
+        user.password_user = hashedPassword;
+        user.must_change_pass = false; 
+
+        await user.save();
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Password changed successfully'
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            status: 'error',
+            message: `Internal Server Error: ${error.message}`
+        })
+    }
+};
+
+export const editUser = async (req, res) => {
+    try {
+        const {id_user} = req.params;
+
+        const {name_user, email_user, password_user} = req.body;
+
+        const user = await db.User.findByPk(id_user);
+
+        if (!user) {
+            return res.status(404).json({
+                status: 'Not Found',
+                message: 'User not found'
+            });
+        }
+        if (id_user !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({
+                status: 'Forbiden',
+                message: 'Dont have permission to edit this profile'
+            });
+        }
+
+        if (name_user) user.name_user = name_user;
+        if (email_user) user.email_user = email_user;
+        if (password_user){
+            const hashedPassword = await bcrypt.hash(password_user, 10);
+            user.password_user = hashedPassword;
+            user.must_change_pass = false;
+        }
+
+        await user.save();
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'User updated successfully',
+            user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 'error',
+            message: `Internal Server Error: ${error.message}`
+        });
+    }
+};

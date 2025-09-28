@@ -26,6 +26,11 @@ export const User = sequelize.define('User',
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },
+    must_change_pass :{
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      allowNull: false
+    }
   }, {
     tableName: 'users',
     timestamps: true,

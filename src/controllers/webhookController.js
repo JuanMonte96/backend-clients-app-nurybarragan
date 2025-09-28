@@ -24,10 +24,23 @@ export const stripeWebhookHandler = async (req, res) => {
       const session = event.data.object;
 
       console.log('✅ Pago exitoso recibido desde Stripe');
-      //console.log('ID de sesión:', session.id);
-
+      
       // Aquí haces tu lógica:
       const newUser = await createUser(session);
+      if (newUser.message === 'user already exists') {
+        
+        const newPayment = await createPayment(newUser, session);
+        const newSubscription = await createsubscription(newUser, newPayment, session);
+
+        return res.status(200).json({
+          received: true,
+          user: newUser,
+          payment: newPayment,
+          subscription: newSubscription
+        });
+
+      }
+      
       await sendEmail(newUser.email, newUser.nombre, newUser.password);
       // - Guardar pago
       const newPayment = await createPayment(newUser, session);
@@ -35,8 +48,8 @@ export const stripeWebhookHandler = async (req, res) => {
       const newSubscription = await createsubscription(newUser, newPayment, session);
       // - Crear suscripción
 
-      return res.status(200).json({ 
-        received: true, 
+      return res.status(200).json({
+        received: true,
         user: newUser,
         payment: newPayment,
         subscription: newSubscription
@@ -48,5 +61,5 @@ export const stripeWebhookHandler = async (req, res) => {
   } catch (err) {
     console.error('⚠️ Webhook verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
-  } 
+  }
 };
