@@ -10,4 +10,4 @@ userRoute.post('/login', loginUser);
 userRoute.get('/allUsers', auth, verifyChangePassword, authorize('admin'), getAllUsers);
 userRoute.get('/profile/:id_user', auth, verifyChangePassword, profileUser);
 userRoute.put('/changePassword', auth, changePassword);
-userRoute.put('/editProfile/:id_user', auth, verifyChangePassword, authorize('admin', 'teacher', 'student'), editUser);
+userRoute.put('/editProfile/:id_user', auth, verifyChangePassword, editUser);

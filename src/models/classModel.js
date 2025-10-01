@@ -1,0 +1,32 @@
+import { DataTypes } from "sequelize";
+import { sequelize } from "../config/conection.js";
+
+export const Class = sequelize.define('Class',
+    {
+        id_class:{
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true,
+            allowNull:false,
+        },
+        title_class: DataTypes.TEXT,
+        description_class: DataTypes.TEXT,
+        level_class: DataTypes.ENUM('beginner', 'intermediate', 'advanced'),
+        teacher_id: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            foreignKey: true
+        },
+        is_blocked: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        }
+    },{
+        tableName: 'classes',
+        timestamps: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
+    }
+)
+
+
