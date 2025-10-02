@@ -1,9 +1,9 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/conection.js";
 
-export const ClassEnrollment = sequelize.define('ClassEnrollment',
+export const Attendance = sequelize.define('Attendance', 
     {
-        id_enrollment: {
+        id_attendance: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true,
@@ -14,20 +14,20 @@ export const ClassEnrollment = sequelize.define('ClassEnrollment',
             allowNull: false,
             foreignKey: true
         },
-        id_class: {
+        id_schedule: {
             type: DataTypes.STRING,
             allowNull: false,
             foreignKey: true
         },
-        status: {
-            type:DataTypes.ENUM('active', 'blocked', 'removed'),
-            defaultValue: 'active',
-            allowNull: false
+        validated_by: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            foreignKey: true
         }
     },{
-        tableName: 'class_enrollments',
-        timestamps: true,
-        createdAt: 'enrolled_at',
-        updatedAt: 'updated_at'
+        tableName: 'attendances',
+        timestamps: false,  
+        createdAt: 'scanned_at',
+        updatedAt: false
     }
 )

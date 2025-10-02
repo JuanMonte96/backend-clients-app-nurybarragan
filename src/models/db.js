@@ -3,7 +3,10 @@ import { User } from "./userModel.js";
 import { Package } from "./packageModel.js";
 import { Payment } from "./paymentModel.js";
 import { Subscription } from "./suscriptionModel.js";
-
+import { Class } from "./classModel.js";
+import { ClassEnrollment } from "./classEnrollmentsModel.js";
+import { ClassSchedule } from "./classScheduleModel.js";
+import { Attendance } from "./attendance.js";
 
 export const db = {};
 
@@ -12,6 +15,10 @@ db.User = User;
 db.Package = Package;
 db.Payment = Payment;
 db.Subscription = Subscription;
+db.Class = Class; 
+db.ClassEnrollment = ClassEnrollment;
+db.ClassSchedule = ClassSchedule;
+db.Attendance = Attendance;
 
 db.User.hasMany(db.Subscription,{foreignKey:"id_user"});
 db.Subscription.belongsTo(db.User, {foreignKey:"id_user"});
