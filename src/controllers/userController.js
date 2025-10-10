@@ -305,7 +305,7 @@ export const blockUser = async (req, res) => {
     try {
         const { id_user } = req.params;
 
-        if (req.user.id !== id_user || req.user.role !== 'admin') {
+        if (req.user.id !== id_user && req.user.role !== 'admin') {
             return res.status(403).json({
                 status: 'Forbidden',
                 message: 'You do not have permission to block this user'

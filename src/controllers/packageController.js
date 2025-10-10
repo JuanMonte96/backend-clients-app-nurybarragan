@@ -33,4 +33,19 @@ export const createPackage = async (req, res) => {
         })
     }
 
-}
+};
+
+export const getPackages = async (req,res)=> {
+    try {
+        const packages = await db.Package.findAll();
+        return res.status(200).json({
+            status: 'success',
+            packages
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 'error',
+            message: error.message
+        })
+    }
+};
