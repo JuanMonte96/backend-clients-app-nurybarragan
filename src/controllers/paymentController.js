@@ -13,8 +13,8 @@ export const startPayment = async (req, res) => {
                 email,
                 custom_id:id_package
             },
-            'http://localhost:3000/success',
-            'http://localhost:3000/cancel'
+            'http://localhost:5173/login',
+            'http://localhost:5173/'
         );
         res.status(200).json({
             status: 'Success',
