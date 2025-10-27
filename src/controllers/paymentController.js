@@ -1,7 +1,6 @@
 import { createCheckoutSession } from "../services/stripe.js";
 import {db} from '../models/db.js';
 
-
 export const startPayment = async (req, res) => {
     try {
         const {stripe_price_id, name, email, id_package} = req.body; 

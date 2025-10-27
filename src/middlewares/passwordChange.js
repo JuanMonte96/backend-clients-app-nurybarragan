@@ -5,7 +5,8 @@ export const verifyChangePassword  = (req, res, next) => {
     if(passwordConfirmation){
         return res.status(400).json({
             status: 'bad request',
-            message: 'you must change your password'
+            message: 'you must change your password',
+            must_change_pass: req.user.must_change_pass
         })
     }
     next();
