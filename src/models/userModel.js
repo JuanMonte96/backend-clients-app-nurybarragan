@@ -11,7 +11,13 @@ export const User = sequelize.define('User',
     name_user: DataTypes.TEXT,
     email_user: {
       type: DataTypes.TEXT,
+      allowNull: false,
       unique: true,
+    },
+    telephone_user: {
+      type: DataTypes.NUMBER,
+      allowNull: false,
+      unique: true
     },
     password_user: DataTypes.TEXT,
     role: {

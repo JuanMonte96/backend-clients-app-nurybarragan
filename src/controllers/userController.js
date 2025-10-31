@@ -3,11 +3,13 @@ import { generateToken } from "../services/Jwt.js";
 import { createTempPassword } from "../services/password.js";
 import bcrypt from 'bcrypt';
 import { Op } from "sequelize";
+import { sendEmail } from "../services/sendEmail.js";
 
 export const createUser = async (session) => {
 
     const email_user = session.customer_email;
     const name_user = session.metadata.name;
+    const telephone_user = session.metadata.telephone;
 
     let user = await db.User.findOne({ where: { email_user } });
 
@@ -17,6 +19,7 @@ export const createUser = async (session) => {
         user = await db.User.create({
             name_user,
             email_user,
+            telephone_user,
             password_user: hashedPassword,
             role: 'student'
         });
@@ -25,6 +28,7 @@ export const createUser = async (session) => {
             id: user.id_user,
             nombre: user.name_user,
             email: user.email_user,
+            telephone: user.telephone_user,
             password: tempPassword,
             message: 'user created'
         })
@@ -33,6 +37,7 @@ export const createUser = async (session) => {
     return {
         id: user.id_user,
         nombre: user.name_user,
+        telefono: user.telephone_user,
         email: user.email_user,
         message: 'user already exists'
     }
@@ -41,13 +46,8 @@ export const createUser = async (session) => {
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
+
         const user = await db.User.findOne({ where: { email_user: email } });
-        if (!user) {
-            return res.status(404).json({
-                status: 'Not Found',
-                message: 'User not found'
-            })
-        };
 
         const isValidPassword = await bcrypt.compare(password, user.password_user);
         if (!isValidPassword) {
@@ -56,55 +56,6 @@ export const loginUser = async (req, res) => {
                 message: 'Invalid password'
             });
         };
-
-        const t = await db.sequelize.transaction();
-
-        const now = new Date();
-
-        await db.Subscription.update(
-            { status: 'expired' },
-            {
-                where: {
-                    id_user: user.id_user,
-                    status: 'active',
-                    end_date: { [Op.lte]: now },
-                },
-                transaction: t
-            }
-        );
-
-        const activeSubscription = await db.Subscription.count(
-            {
-                where: {
-                    id_user: user.id_user,
-                    status: 'active',
-                    end_date: { [Op.gt]: now },
-                },
-                transaction: t,
-            }
-        );
-
-        if (!activeSubscription) {
-            if (!user.is_blocked) {
-                await db.User.update(
-                    { is_blocked: true },
-                    { where: { id_user: user.id_user }, transaction: t }
-                );
-            }
-            await t.commit();
-            return res.status(403).json({
-                status: 'Forbiden',
-                message: 'Your subscription has expired, please contact to admin or buy a new subscription '
-            })
-        } else if (user.is_blocked) {
-            await db.User.update(
-                { is_blocked: false },
-                { where: { id_user: user.id_user }, transaction: t }
-            );
-        }
-
-        await t.commit();
-
         const payload = {
             id: user.id_user,
             email: user.email_user,
@@ -112,21 +63,98 @@ export const loginUser = async (req, res) => {
             must_change_pass: user.must_change_pass
         };
 
+        if (!user) {
+            return res.status(404).json({
+                status: 'Not Found',
+                message: 'User not found'
+            })
+        };
+
+        if (user.role === 'student') {
+            const t = await db.sequelize.transaction();
+
+            const now = new Date();
+
+            await db.Subscription.update(
+                { status: 'expired' },
+                {
+                    where: {
+                        id_user: user.id_user,
+                        status: 'active',
+                        end_date: { [Op.lte]: now },
+                    },
+                    transaction: t
+                }
+            );
+
+            const activeSubscription = await db.Subscription.count(
+                {
+                    where: {
+                        id_user: user.id_user,
+                        status: 'active',
+                        end_date: { [Op.gt]: now },
+                    },
+                    transaction: t,
+                }
+            );
+
+            if (!activeSubscription) {
+                if (!user.is_blocked) {
+                    await db.User.update(
+                        { is_blocked: true },
+                        { where: { id_user: user.id_user }, transaction: t }
+                    );
+                }
+                await t.commit();
+                return res.status(403).json({
+                    status: 'Forbiden',
+                    message: 'Your subscription has expired, please contact to admin or buy a new subscription '
+                })
+            } else if (user.is_blocked) {
+                await db.User.update(
+                    { is_blocked: false },
+                    { where: { id_user: user.id_user }, transaction: t }
+                );
+            }
+
+            await t.commit();
+
+            const token = generateToken(payload);
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Login Successful',
+                token,
+                user: {
+                    id: user.id_user,
+                    name: user.name_user,
+                    email: user.email_user,
+                    role: user.role,
+                    must_change_pass: user.must_change_pass
+                }
+            });
+        }
+        if (user.is_blocked) {
+            return res.status(403).json({
+                status: 'Forbiden',
+                message: 'Your account is blocked, please contact to admin'
+            })
+        }
+
         const token = generateToken(payload);
 
         return res.status(200).json({
             status: 'success',
             message: 'Login Successful',
-            token, 
+            token,
             user: {
-                id:user.id_user,
-                name:user.name_user,
-                email:user.email_user,
-                role:user.role,
+                id: user.id_user,
+                name: user.name_user,
+                email: user.email_user,
+                role: user.role,
                 must_change_pass: user.must_change_pass
             }
-        });
-
+        })
 
     } catch (error) {
         return res.status(500).json({
@@ -210,7 +238,7 @@ export const profileUser = async (req, res) => {
         return res.status(200).json({
             status: 'success',
             message: 'User profile',
-            user: req.user,
+            user: user,
             subscriptionByUser
         });
     }
@@ -350,5 +378,56 @@ export const blockUser = async (req, res) => {
             status: 'error',
             message: `Internal Server Error: ${error.message}`
         })
+    }
+};
+
+export const createAdminUser = async (req, res) => {
+    try {
+        const { name, email, phone, role } = req.body;
+
+        await db.User.findOne({ where: { email_user: email } }).then(existingUser => {
+            if (existingUser) {
+                return res.status(400).json({
+                    status: 'Bad Request',
+                    message: 'User with this email already exists'
+                });
+            }
+        });
+
+        const { tempPassword, hashedPassword } = await createTempPassword();
+
+        const user = await db.User.create({
+            name_user: name,
+            email_user: email,
+            telephone_user: phone,
+            password_user: hashedPassword,
+            role: role
+        })
+
+        if (!user) {
+            return res.status(400).json({
+                status: 'Bad Request',
+                message: 'User could not be created'
+            });
+        }
+
+        await sendEmail(email, name, tempPassword);
+
+        return res.status(201).json({
+            status: 'Created',
+            message: 'User created successfully',
+            user: {
+                id_user: user.id_user,
+                name_user: user.name_user,
+                email_user: user.email_user,
+                telephone_user: user.telephone_user,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 'Server Error',
+            message: 'Internal Server Error'
+        });
     }
 };

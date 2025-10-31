@@ -11,7 +11,10 @@ export const Class = sequelize.define('Class',
         },
         title_class: DataTypes.TEXT,
         description_class: DataTypes.TEXT,
-        level_class: DataTypes.ENUM('beginner', 'intermediate', 'advanced'),
+        level_class: {
+            type: DataTypes.ENUM('beginner', 'intermediate', 'advanced'),
+            defaultValue:'beginner'
+        },
         teacher_id: {
             type: DataTypes.STRING,
             allowNull: false,

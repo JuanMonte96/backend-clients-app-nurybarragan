@@ -6,6 +6,7 @@ import { userRoute } from './src/routes/userRoute.js';
 import { packageRoute } from './src/routes/packageRoute.js';
 import { webhookRouter } from './src/routes/webhookRoute.js';
 import { paymentsRoute } from './src/routes/paymentsRoute.js';
+import { classesRoute } from './src/routes/classesRoute.js';
 
 console.log('Starting the server nbdance&fitness...');
 
@@ -32,6 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/users', userRoute);
 app.use('/api/packages', packageRoute);
 app.use('/api/payments', paymentsRoute);
+app.use('/api/classes', classesRoute);
 
 
 app.get('/success', (req,res)=>{
