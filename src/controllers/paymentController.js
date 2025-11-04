@@ -1,5 +1,10 @@
 import { createCheckoutSession } from "../services/stripe.js";
 import {db} from '../models/db.js';
+import dotenv from 'dotenv'
+
+dotenv.config();
+
+const URL_BASE = process.env.URL_FRONTEND_BASE
 
 export const startPayment = async (req, res) => {
     try {
@@ -12,8 +17,8 @@ export const startPayment = async (req, res) => {
                 email,
                 custom_id:id_package
             },
-            'http://localhost:5173/login',
-            'http://localhost:5173/'
+            `${URL_BASE}login`,
+            URL_BASE
         );
         res.status(200).json({
             status: 'Success',
