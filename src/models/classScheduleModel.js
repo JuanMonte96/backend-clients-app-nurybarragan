@@ -30,7 +30,7 @@ export const ClassSchedule = sequelize.define('ClassSchedule',
         qr_code_url:DataTypes.TEXT,
 
     },{
-        tablename: 'class_schedules',
+        tableName: 'class_schedules',
         timestamps: true,
         createdAt: 'created_at',
         updatedAt: 'updated_at' 

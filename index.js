@@ -7,6 +7,8 @@ import { packageRoute } from './src/routes/packageRoute.js';
 import { webhookRouter } from './src/routes/webhookRoute.js';
 import { paymentsRoute } from './src/routes/paymentsRoute.js';
 import { classesRoute } from './src/routes/classesRoute.js';
+import { scheduleRoute } from './src/routes/scheduleRoute.js';
+import { enrollmentRoute } from './src/routes/enrrollmentRoute.js';
 
 console.log('Starting the server nbdance&fitness...');
 
@@ -29,23 +31,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.use('/api/users', userRoute);
 app.use('/api/packages', packageRoute);
 app.use('/api/payments', paymentsRoute);
 app.use('/api/classes', classesRoute);
-
-
-app.get('/success', (req,res)=>{
-    res.status(200).json({
-        message: 'Payment successful'
-    })
-})
-app.get('/cancel', (req,res)=>{
-    res.status(200).json({
-        message: 'Payment canceled'
-    })
-})
+app.use('/api/schedule',scheduleRoute);
+app.use('/api/enrollments', enrollmentRoute)
 
 app.get('/',(req, res)=> {
     res.json({

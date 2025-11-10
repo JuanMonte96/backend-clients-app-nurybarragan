@@ -14,7 +14,7 @@ export const ClassEnrollment = sequelize.define('ClassEnrollment',
             allowNull: false,
             foreignKey: true
         },
-        id_class: {
+        id_schedule: {
             type: DataTypes.STRING,
             allowNull: false,
             foreignKey: true
