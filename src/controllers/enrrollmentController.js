@@ -6,24 +6,28 @@ export const createEnrrollment = async (req, res) => {
         const userId = req.user.id;
 
         const scheduleToEnroll = await db.ClassSchedule.findByPk(scheduleId);
-        console.log(scheduleToEnroll)
-        console.log(userId)
 
         if (!scheduleToEnroll) {
             return res.status(404).json({
                 status: 'Not Found',
-                message: 'Scheduel not found'
+                message: 'Schedule not found'
             })
         }
 
-        const userBlocked = await db.User.findByPk(userId);
-
-        if (!userBlocked || userBlocked.is_blocked) {
-            return res.status(403).json({
-                status: 'Forbiden',
-                message: 'you cant enroll to this class'
-            })
-        }
+        const user = await db.User.findByPk(userId, {
+            include: [
+                {
+                    model: db.Subscription,
+                    where: { status: 'active' },
+                    required: false,
+                    include: [{
+                        model: db.Package,
+                        attributes: ['id_package', 'class_limit']
+                    }],
+                    order: [['created_at', 'ASC']]
+                }
+            ]
+        });
 
         const alreadyEnroll = await db.ClassEnrollment.findOne({ where: { id_user: userId, id_schedule: scheduleId, status: 'active' } })
 
@@ -31,6 +35,49 @@ export const createEnrrollment = async (req, res) => {
             return res.status(400).json({
                 status: 'Bad Request',
                 message: 'You are already enroll for this class'
+            })
+        }
+
+        console.log(user.Subscriptions)
+
+
+        if (!user || user.is_blocked) {
+            return res.status(403).json({
+                status: 'Forbiden',
+                message: 'you cant enroll to this class'
+            })
+        } else if (!user.Subscriptions || user.Subscriptions.length === 0) {
+            return res.status(400).json({
+                status: 'Bad Request',
+                message: 'You have not active subscriptions'
+            })
+        }
+
+        let totalClassesAvailable = 0;
+        let subscriptionToUse = null;
+
+        for (const subscription of user.Subscriptions) {
+            const classesUsed = await db.ClassEnrollment.count({
+                where: {
+                    id_user: userId,
+                    status: 'active'
+                }
+            })
+
+            const availableClasses = subscription.Package.class_limit - classesUsed
+
+            if (availableClasses > 0 && !subscriptionToUse) {
+                subscriptionToUse = subscription;
+            }
+            totalClassesAvailable += availableClasses;
+        }
+        
+
+        if (totalClassesAvailable <= 0) {
+            console.log(totalClassesAvailable)
+            return res.status(400).json({
+                status: 'Bad request',
+                message: 'You have no available calsses in your subscription anymore'
             })
         }
 
@@ -43,7 +90,8 @@ export const createEnrrollment = async (req, res) => {
         return res.status(201).json({
             status: 'create',
             message: 'enrollment created succesfully',
-            newEnrollment
+            newEnrollment,
+            classesRemaning: totalClassesAvailable - 1
         })
     } catch (error) {
         console.log(error)
@@ -56,7 +104,7 @@ export const createEnrrollment = async (req, res) => {
 
 export const getEnrollmentsById = async (req, res) => {
     try {
-        const  userId  = req.user.id;
+        const userId = req.user.id;
 
         const user = await db.User.findByPk(userId);
 

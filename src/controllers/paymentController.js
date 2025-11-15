@@ -17,7 +17,7 @@ export const startPayment = async (req, res) => {
                 email,
                 custom_id:id_package
             },
-            `${URL_BASE}login`,
+            `${URL_BASE}/login`,
             URL_BASE
         );
         res.status(200).json({
