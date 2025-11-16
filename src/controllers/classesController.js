@@ -138,3 +138,64 @@ export const deleteClass = async(req,res)=> {
     });
   }
 }
+
+export const getAvailableClasses = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const user = await db.User.findByPk(userId, {
+            include: [{
+                model: db.Subscription,
+                where: { status: 'active' },
+                required: false,
+                include: [{
+                    model: db.Package,
+                    attributes: ['id_package', 'class_limit']
+                }]
+            }]
+        });
+
+        if (!user || !user.Subscriptions || user.Subscriptions.length === 0) {
+            return res.status(200).json({
+                status: 'Success',
+                totalAvailable: 0,
+                subscriptions: []
+            })
+        }
+
+        let subscriptionsDetails = [];
+        let totalAvailable = 0;
+
+        for (const subscription of user.Subscriptions) {
+            const classesUsed = await db.ClassEnrollment.count({
+                where: {
+                    id_user: userId,
+                    status: 'active'
+                }
+            });
+
+            const available = subscription.Package.class_limit - classesUsed;
+            totalAvailable += available;
+
+            subscriptionsDetails.push({
+                id_subscription: subscription.id_subscription,
+                package_name: subscription.Package.name_package,
+                total_classes: subscription.Package.class_limit,
+                classes_used: classesUsed,
+                classes_available: available,
+                created_at: subscription.created_at
+            })
+        }
+
+        return res.status(200).json({
+            status: 'Success',
+            totalAvailable,
+            subscriptions: subscriptionsDetails
+        })
+    } catch (error) {
+        return res.status(500).json({
+            status: 'internal server error',
+            message: `the error is: ${error.message}`
+        })
+    }
+}

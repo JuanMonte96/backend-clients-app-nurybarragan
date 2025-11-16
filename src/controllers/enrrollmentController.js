@@ -38,9 +38,6 @@ export const createEnrrollment = async (req, res) => {
             })
         }
 
-        console.log(user.Subscriptions)
-
-
         if (!user || user.is_blocked) {
             return res.status(403).json({
                 status: 'Forbiden',
@@ -71,10 +68,9 @@ export const createEnrrollment = async (req, res) => {
             }
             totalClassesAvailable += availableClasses;
         }
-        
+
 
         if (totalClassesAvailable <= 0) {
-            console.log(totalClassesAvailable)
             return res.status(400).json({
                 status: 'Bad request',
                 message: 'You have no available calsses in your subscription anymore'
@@ -155,4 +151,34 @@ export const getEnrollmentsById = async (req, res) => {
             message: `error message: ${error.message}`
         })
     }
-} 
+}
+
+export const removeEnroll = async (req, res) => {
+    try {
+
+        const { id } = req.params
+
+        const enrollmentDelete = await db.ClassEnrollment.findByPk(id)
+
+        console.log(enrollmentDelete)
+
+        if (!enrollmentDelete) {
+            return res.status(404).json({
+                status: 'Not Found',
+                message: 'there are not enrollment created'
+            })
+        }
+
+        await enrollmentDelete.destroy()
+        return res.status(200).json({
+            status: 'Success',
+            message: 'enrollments remove successfully'
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            status: 'Internal server error',
+            message: `error: ${error.message}`
+        })
+    }
+};
