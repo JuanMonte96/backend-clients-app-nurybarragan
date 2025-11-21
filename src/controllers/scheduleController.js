@@ -83,3 +83,6 @@ export const getScheduleById = async (req, res) => {
     }
 }
 
+export const updateSchedule = (req,res) =>{
+    
+} 

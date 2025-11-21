@@ -157,6 +157,14 @@ export const removeEnroll = async (req, res) => {
     try {
 
         const { id } = req.params
+        const userRole = req.user.role;
+
+        if (userRole != 'admin') {
+            return res.status(403).json({
+                status: 'Forbiden',
+                message: 'You dont have permissions to delete a enrollment'
+            })
+        }
 
         const enrollmentDelete = await db.ClassEnrollment.findByPk(id)
 
@@ -182,3 +190,41 @@ export const removeEnroll = async (req, res) => {
         })
     }
 };
+
+export const updateEnrollment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {newStatus} = req.body
+        const userId = req.user.id
+        
+        if(!newStatus){
+            return res.status(400).json({
+                status:'Bad Request',
+                message:'Status is required'
+            })
+        }    
+
+        const enrollment = await db.ClassEnrollment.findByPk(id)
+
+        if(enrollment.id_user != userId && req.user.role != 'admin'){   
+            return res.status(403).json({
+                status:'Forbidden',
+                message:'You can only update your own enrollments'
+            })
+        }
+
+        await enrollment.update({status:newStatus})
+        
+        return res.status(200).json({
+            status:'Success',
+            message:'Enrollment updated succesfully',
+            enrollment
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            status:'Internal server error',
+            message:`error: ${error.message}`
+        })
+    }
+}
