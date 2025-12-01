@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/conection.js";
+import { is } from "zod/locales";
 
 
 export const ClassSchedule = sequelize.define('ClassSchedule',
@@ -28,6 +29,11 @@ export const ClassSchedule = sequelize.define('ClassSchedule',
             allowNull: false
         },
         qr_code_url:DataTypes.TEXT,
+        is_active: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            allowNull: false
+        }
 
     },{
         tableName: 'class_schedules',

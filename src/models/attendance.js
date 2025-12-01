@@ -19,13 +19,18 @@ export const Attendance = sequelize.define('Attendance',
             allowNull: false,
             foreignKey: true
         },
-        validated_by: {
+        id_enrollment: {
             type: DataTypes.STRING,
             allowNull: true,
             foreignKey: true
+        },
+        status:{
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            allowNull: false
         }
     },{
-        tableName: 'attendances',
+        tableName: 'attendance',
         timestamps: false,  
         createdAt: 'scanned_at',
         updatedAt: false

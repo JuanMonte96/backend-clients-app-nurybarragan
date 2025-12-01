@@ -9,6 +9,7 @@ import { paymentsRoute } from './src/routes/paymentsRoute.js';
 import { classesRoute } from './src/routes/classesRoute.js';
 import { scheduleRoute } from './src/routes/scheduleRoute.js';
 import { enrollmentRoute } from './src/routes/enrrollmentRoute.js';
+import { attendanceRoute } from './src/routes/attendanceRoute.js';
 
 console.log('Starting the server nbdance&fitness...');
 
@@ -36,7 +37,8 @@ app.use('/api/packages', packageRoute);
 app.use('/api/payments', paymentsRoute);
 app.use('/api/classes', classesRoute);
 app.use('/api/schedule',scheduleRoute);
-app.use('/api/enrollments', enrollmentRoute)
+app.use('/api/enrollments', enrollmentRoute);
+app.use('/api/attendance', attendanceRoute);
 
 app.get('/',(req, res)=> {
     res.json({

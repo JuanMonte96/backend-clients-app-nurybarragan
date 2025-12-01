@@ -17,16 +17,11 @@ export const createSchedule = async (req, res) => {
             })
         }
 
-        const qrUrl = `${API_URL}/api/attendance/checkIn`;
-
-        const qrImage = await QRcode.toDataURL(qrUrl)
-
         const newSchedule = await db.ClassSchedule.create({
             id_class: idClass,
             date_class: dateClass,
             start_time: startHour,
             end_time: endHour,
-            qr_code_url: qrImage
         })
 
         if (!newSchedule) return res.status(400).json({
@@ -34,6 +29,11 @@ export const createSchedule = async (req, res) => {
             message: 'schedule was not created the good way please try it again'
         })
 
+        const qrUrl = `${API_URL}/api/attendance/scan-qr/${newSchedule.id_schedule}`;
+
+        const qrImage = await QRcode.toDataURL(qrUrl)
+
+        await newSchedule.update({qr_code_url: qrImage})
 
         return res.status(201).json({
             status: 'Created',
