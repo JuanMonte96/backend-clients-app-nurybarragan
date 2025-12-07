@@ -1,7 +1,5 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/conection.js";
-import { is } from "zod/locales";
-
 
 export const ClassSchedule = sequelize.define('ClassSchedule',
     {
