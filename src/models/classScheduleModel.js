@@ -26,6 +26,19 @@ export const ClassSchedule = sequelize.define('ClassSchedule',
             type: DataTypes.TIME,
             allowNull: false
         },
+        time_zone: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: 'Europe/Paris'
+        },
+        start_timestamp: {
+            type: DataTypes.DATE,
+            allowNull: false
+        },
+        end_timestamp: {
+            type: DataTypes.DATE,
+            allowNull: false
+        },
         qr_code_url:DataTypes.TEXT,
         is_active: {
             type: DataTypes.BOOLEAN,

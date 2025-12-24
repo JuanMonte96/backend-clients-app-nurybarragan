@@ -36,6 +36,11 @@ export const User = sequelize.define('User',
       type: DataTypes.BOOLEAN,
       defaultValue: true,
       allowNull: false
+    },
+    time_zone:{
+      type: DataTypes.STRING,
+      defaultValue: 'Europe/Paris',
+      allowNull: false
     }
   }, {
     tableName: 'users',

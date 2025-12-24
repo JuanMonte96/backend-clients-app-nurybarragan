@@ -4,6 +4,8 @@ import { createTempPassword } from "../services/password.js";
 import bcrypt from 'bcrypt';
 import { Op } from "sequelize";
 import { sendEmail } from "../services/sendEmail.js";
+import { DateTime } from "luxon";
+
 
 export const createUser = async (session) => {
 
@@ -45,11 +47,22 @@ export const createUser = async (session) => {
 
 export const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, timezone } = req.body;
 
         const user = await db.User.findOne({ where: { email_user: email } });
 
         const isValidPassword = await bcrypt.compare(password, user.password_user);
+        
+        let userTimezone = user.time_zone || 'UTC';
+        
+        if (timezone && DateTime.local().setZone(timezone).isValid && user.time_zone !== timezone) {
+            await db.User.update(
+                { time_zone: timezone },
+                { where: { id_user: user.id_user } }
+            );
+            userTimezone = timezone;
+        }
+
         if (!isValidPassword) {
             return res.status(401).json({
                 status: 'Unauthorized',
@@ -60,7 +73,8 @@ export const loginUser = async (req, res) => {
             id: user.id_user,
             email: user.email_user,
             role: user.role,
-            must_change_pass: user.must_change_pass
+            must_change_pass: user.must_change_pass,
+            timezone: userTimezone 
         };
 
         if (!user) {
@@ -130,7 +144,8 @@ export const loginUser = async (req, res) => {
                     name: user.name_user,
                     email: user.email_user,
                     role: user.role,
-                    must_change_pass: user.must_change_pass
+                    must_change_pass: user.must_change_pass,
+                    timezone: userTimezone
                 }
             });
         }
@@ -152,7 +167,8 @@ export const loginUser = async (req, res) => {
                 name: user.name_user,
                 email: user.email_user,
                 role: user.role,
-                must_change_pass: user.must_change_pass
+                must_change_pass: user.must_change_pass,
+                timezone: userTimezone
             }
         })
 
@@ -175,7 +191,7 @@ export const getAllUsers = async (req, res) => {
         console.log(db.User.getAttributes());
 
         const { count, rows } = await db.User.findAndCountAll({
-            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "created_at"], // selecciona columnas necesarias
+            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone","created_at"], // selecciona columnas necesarias
             limit,
             offset
         });
@@ -196,7 +212,7 @@ export const profileUser = async (req, res) => {
         const { id_user } = req.params;
         if (req.user.role === 'admin' || req.user.role === 'teacher') {
             const user = await db.User.findByPk(id_user, {
-                attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "created_at"]
+                attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"]
             })
             if (!user) {
                 return res.status(404).json({
@@ -226,7 +242,7 @@ export const profileUser = async (req, res) => {
             })
         }
         const user = await db.User.findByPk(id_user, {
-            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "created_at"]
+            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"]
         })
         const subscriptionByUser = await db.Subscription.findAll({
             where: { id_user: id_user },

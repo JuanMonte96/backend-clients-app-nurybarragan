@@ -1,9 +1,11 @@
 import { db } from '../models/db.js';
+import { localToUTC, utcToLocal, isTimeWithinRange, getNowInTimeZone } from '../services/timezone.js';
 
 export const attendanceViaQr = async (req, res) => {
     try {
         const { scheduleId } = req.params;
         const userId = req.user.id;
+        const userTimezone = req.user.timezone || 'Europe/Paris';
 
         const schedule = await db.ClassSchedule.findByPk(scheduleId, {
             include: [{
@@ -41,8 +43,8 @@ export const attendanceViaQr = async (req, res) => {
 
         if (enrollment.status !== 'active') {
             return res.status(400).json({
-                ststaus: 'Bad Request',
-                message: 'Your enrollmet is not active'
+                status: 'Bad Request',
+                message: 'Your enrollment is not active'
             })
         };
 
@@ -62,31 +64,25 @@ export const attendanceViaQr = async (req, res) => {
             })
         }
 
-        const now = new Date();
+        
+        const now = getNowInTimeZone();
+        const startUTC = new Date(schedule.start_time);
+        const endUTC = new Date(schedule.end_time);
 
-        const scheduleStart = new Date(schedule.date_class);
-        const [startHours, startMinutes] = schedule.start_time.split(':');
-        scheduleStart.setHours(parseInt(startHours), parseInt(startMinutes), 0);
+        const fifteenMinutesBefore = new Date(startUTC.getTime() - 15 * 60000);
 
-        const scheduleEnd = new Date(schedule.date_class);
-        const [endHours, endMinutes] = schedule.end_time.split(':');
-        scheduleEnd.setHours(parseInt(endHours), parseInt(endMinutes), 0);
-
-        const fifteenMinutesBefore = new Date(scheduleStart.getTime() - 15 * 60000);
-
-        if (now < fifteenMinutesBefore) {
+        console.log('Now UTC:', now);
+        console.log('Start UTC:', startUTC);
+        console.log('Fifteen Minutes Before Start UTC:', fifteenMinutesBefore);     
+        
+        if(!isTimeWithinRange(now, fifteenMinutesBefore, endUTC)) {
+            const startLocal = utcToLocal(startUTC, userTimezone);
+            const endLocal = utcToLocal(endUTC, userTimezone);
             return res.status(400).json({
                 status: 'Bad Request',
-                message: 'You can only mark attendance within 15 minutes before the class starts'
+                message: `Attendance can only be marked between fifteen minutes before ${startLocal.time} and ${endLocal.time}`
             })
-        };
-
-        if (now > scheduleEnd) {
-            return res.status(400).json({
-                status: 'Bad Request',
-                message: 'The class has already ended, attendance can no longer be marked'
-            })
-        };
+        }
 
         const newAttendance = await db.Attendance.create({
             id_enrollment: enrollment.id_enrollment,
@@ -136,7 +132,7 @@ export const markAttendance = async (req, res) => {
             })
         };
 
-        if (req.user.role !== 'admin' || req.user.id !== 'teacher') {
+        if (req.user.role !== 'admin' && req.user.id === userId) {
             return res.status(403).json({
                 status: 'Forbidden',
                 message: 'You cannot mark your own attendance'
@@ -177,8 +173,27 @@ export const markAttendance = async (req, res) => {
 
 export const getAttendanceByUser = async (req, res) => {
     try {
+        const userId = req.user.id; 
+        const attenadanceByUser = await db.Attendance.findAll({
+            where: {id_user: userId}
+        })
 
+        if(!attenadanceByUser) {
+            return res.status(404).json({
+                status: 'Not found',
+                message: 'You dont have attendance records yet'
+            })
+        };
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Attendance records retrieved successfully',
+            attenadanceByUser
+        })
     } catch (error) {
-
+        return res.status(500).json({
+            status: 'Internal Server Error',
+            message: `Error: ${error.message}`
+        })
     }
 }

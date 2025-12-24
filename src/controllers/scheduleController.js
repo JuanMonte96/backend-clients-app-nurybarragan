@@ -1,15 +1,20 @@
 import { db } from "../models/db.js";
 import dotenv from 'dotenv'
 import QRcode from 'qrcode'
+import { localToUTC, utcToLocal, extractDateAndTime } from "../services/timezone.js";
+
 
 dotenv.config()
 const API_URL = process.env.API_URL
 
 export const createSchedule = async (req, res) => {
     try {
-        const { idClass, dateClass, startHour, endHour } = req.body;
+        const { idClass, dateClass, startHour, endHour, timeZone } = req.body;
+
+        const userTimezone = req.user.timezone || 'Europe/Paris';
 
         const classById = await db.Class.findByPk(idClass);
+        
         if (!classById) {
             return res.status(404).json({
                 status: 'Not found',
@@ -17,11 +22,20 @@ export const createSchedule = async (req, res) => {
             })
         }
 
+        const startTimeUTC  = localToUTC(dateClass, startHour, timeZone);
+        const endTimeUTC = localToUTC(dateClass, endHour, timeZone);
+
+        const {date: dateDB , time: startTimeDB} = extractDateAndTime(startTimeUTC)
+        const {time: endTimeDB} = extractDateAndTime(endTimeUTC)
+
         const newSchedule = await db.ClassSchedule.create({
             id_class: idClass,
-            date_class: dateClass,
-            start_time: startHour,
-            end_time: endHour,
+            date_class: dateDB,
+            start_time: startTimeDB,
+            end_time: endTimeDB,
+            time_zone: timeZone,
+            start_timestamp: startTimeUTC,
+            end_timestamp: endTimeUTC
         })
 
         if (!newSchedule) return res.status(400).json({
@@ -35,10 +49,19 @@ export const createSchedule = async (req, res) => {
 
         await newSchedule.update({qr_code_url: qrImage})
 
+        const startLocal = utcToLocal(newSchedule.start_timestamp, userTimezone);
+        const endLocal = utcToLocal(newSchedule.end_timestamp, userTimezone);
+
+        console.log(startLocal.time,endLocal.time)
+
         return res.status(201).json({
             status: 'Created',
             message: 'Schedule created successfully',
-            newSchedule
+            scheduleId: newSchedule.id_schedule,
+            date_class: newSchedule.date_class,
+            start_time: startLocal.time,
+            end_time: endLocal.time,
+            time_zone: newSchedule.time_zone,
         })
 
 
@@ -53,6 +76,10 @@ export const createSchedule = async (req, res) => {
 export const getScheduleById = async (req, res) => {
     try {
         const { id } = req.params
+        const userTimezone = req.user.timezone || 'Europe/Paris';
+
+        console.log('User Time Zone:', userTimezone);
+        
         if (!id) {
             return res.status(400).json({
                 status: 'Bad Request',
@@ -69,10 +96,26 @@ export const getScheduleById = async (req, res) => {
             })
         }
 
+        const startLocal = utcToLocal(scheduleFind.start_timestamp, userTimezone);
+        const endLocal = utcToLocal(scheduleFind.end_timestamp, userTimezone);
+
+        console.log(startLocal.time,endLocal.time)
+
         return res.status(200).json({
             status: 'Success',
             message: 'Schedule found successfully',
-            scheduleFind
+            schedule : {
+                id_schedule: scheduleFind.id_schedule,
+                id_class: scheduleFind.id_class,
+                date_class: scheduleFind.date_class,
+                start_time: startLocal.time,
+                end_time: endLocal.time,
+                time_zone: scheduleFind.time_zone,
+                start_timestamp: scheduleFind.start_timestamp,
+                end_timestamp: scheduleFind.end_timestamp,
+                qr_code_url: scheduleFind.qr_code_url,
+                is_active: scheduleFind.is_active, 
+            }
         })
 
     } catch (error) {
@@ -83,6 +126,11 @@ export const getScheduleById = async (req, res) => {
     }
 }
 
-export const updateSchedule = (req,res) =>{
-    
-} 
+// export const getAllSchedules = async (req, res) => {
+//     try {
+//         const 
+
+//     } catch (error) {
+        
+//     }
+// };
