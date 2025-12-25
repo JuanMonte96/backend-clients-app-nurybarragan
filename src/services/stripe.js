@@ -42,12 +42,12 @@ export const createCheckoutSession = async (priceId, customerData, successUrl, c
     customer_email: customerData.email,
     metadata: {
       name: customerData.name,
-      custom_id: customerData.custom_id,
-      telephone: customerData.telephone
+      telephone: customerData.telephone,  // ✅ Agregar teléfono
+      custom_id: customerData.custom_id
     },
     success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: cancelUrl,
   });
 
   return session;
-};
+};  

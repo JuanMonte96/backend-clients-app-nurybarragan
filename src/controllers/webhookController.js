@@ -24,6 +24,7 @@ export const stripeWebhookHandler = async (req, res) => {
       const session = event.data.object;
 
       console.log('✅ Pago exitoso recibido desde Stripe');
+      console.log(session)
       
       // Aquí haces tu lógica:
       const newUser = await createUser(session);

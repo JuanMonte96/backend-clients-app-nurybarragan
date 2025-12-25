@@ -8,14 +8,15 @@ const URL_BASE = process.env.URL_FRONTEND_BASE
 
 export const startPayment = async (req, res) => {
     try {
-        const {stripe_price_id, name, email, id_package} = req.body; 
+        const {stripe_price_id, name, email, id_package, telephone} = req.body; 
 
         const session = await createCheckoutSession(
             stripe_price_id,
             {
                 name,
                 email,
-                custom_id:id_package
+                custom_id:id_package,
+                telephone
             },
             `${URL_BASE}/login`,
             URL_BASE
