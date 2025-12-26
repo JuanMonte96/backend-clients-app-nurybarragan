@@ -126,11 +126,70 @@ export const getScheduleById = async (req, res) => {
     }
 }
 
-// export const getAllSchedules = async (req, res) => {
-//     try {
-//         const 
+export const getAllSchedulesByClass = async (req, res) => {
+    try {
+        const {classId} = req.params;
+        const userTimezone = req.user.timezone || 'Europe/Paris';
 
-//     } catch (error) {
-        
-//     }
-// };
+        if (!classId) {
+            return res.status(400).json({
+                status: 'Bad Request',
+                message: 'Class id is required'
+            })
+        }
+
+        // Verificar que la clase existe
+        const classExists = await db.Class.findByPk(classId);
+        if (!classExists) {
+            return res.status(404).json({
+                status: 'Not found',
+                message: 'The class does not exist'
+            })
+        }
+
+        // Traer todos los horarios asociados a la clase
+        const schedules = await db.ClassSchedule.findAll({
+            where: { id_class: classId }
+        });
+
+        if (!schedules || schedules.length === 0) {
+            return res.status(404).json({
+                status: 'Not found',
+                message: 'No schedules found for this class'
+            })
+        }
+
+        // Convertir timestamps a zona horaria local del usuario
+        const schedulesWithLocalTime = schedules.map(schedule => {
+            const startLocal = utcToLocal(schedule.start_timestamp, userTimezone);
+            const endLocal = utcToLocal(schedule.end_timestamp, userTimezone);
+
+            return {
+                id_schedule: schedule.id_schedule,
+                id_class: schedule.id_class,
+                date_class: schedule.date_class,
+                start_time: startLocal.time,
+                end_time: endLocal.time,
+                time_zone: schedule.time_zone,
+                time_zone_user: userTimezone,
+                start_timestamp: schedule.start_timestamp,
+                end_timestamp: schedule.end_timestamp,
+                qr_code_url: schedule.qr_code_url,
+                is_active: schedule.is_active
+            }
+        });
+
+        return res.status(200).json({
+            status: 'Success',
+            message: 'Schedules retrieved successfully',
+            total: schedulesWithLocalTime.length,
+            schedules: schedulesWithLocalTime
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            status: "Error",
+            message: `Server connection was lost: ${error}`
+        })
+    }
+};
