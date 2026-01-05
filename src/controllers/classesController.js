@@ -62,7 +62,14 @@ export const getAllClasses = async (req, res) => {
       whereCondition = { is_blocked: false };
     }
 
-    const classes = await db.Class.findAll({ where: whereCondition });
+    const classes = await db.Class.findAll({ 
+      where: whereCondition,
+      include: [{
+        model: db.User,
+        as: 'teacher',
+        attributes: ['id_user', 'name_user', 'email_user']
+      }]
+    });
 
     if (!classes || classes.length === 0) {
       return res.status(404).json({
@@ -71,10 +78,27 @@ export const getAllClasses = async (req, res) => {
       })
     }
 
+    const classesWithTeacher = classes.map(c => {
+      const cls = c.toJSON();
+      return {
+        id_class: cls.id_class,
+        title_class: cls.title_class,
+        description_class: cls.description_class,
+        level_class: cls.level_class,
+        is_blocked: cls.is_blocked,
+        created_at: cls.created_at,
+        teacher: cls.teacher ? {
+          id_user: cls.teacher.id_user,
+          name_user: cls.teacher.name_user,
+          email_user: cls.teacher.email_user
+        } : null
+      }
+    });
+
     return res.status(200).json({
       status: 'success',
       message: 'Classes retrieved succesfully',
-      classes
+      classes: classesWithTeacher
     });
   } catch (error) {
     res.status(500).json({

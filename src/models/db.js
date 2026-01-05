@@ -34,3 +34,7 @@ db.ClassEnrollment.belongsTo(db.ClassSchedule, { foreignKey: "id_schedule" });
 
 db.Class.hasMany(db.ClassSchedule, { foreignKey: "id_class" });
 db.ClassSchedule.belongsTo(db.Class, { foreignKey: "id_class" });
+ 
+// Association between Class and User (teacher)
+db.User.hasMany(db.Class, { foreignKey: 'teacher_id', as: 'classes' });
+db.Class.belongsTo(db.User, { foreignKey: 'teacher_id', targetKey: 'id_user', as: 'teacher' });
