@@ -122,7 +122,13 @@ export const getEnrollmentsById = async (req, res) => {
                     include: [
                         {
                             model: db.Class,
-                            attributes: ['title_class', 'description_class', 'level_class', 'is_blocked']
+                            attributes: ['title_class', 'description_class', 'level_class', 'is_blocked'],
+                            include: [
+                                {
+                                    model: db.User, as: 'teacher', 
+                                    attributes: ['id_user', 'name_user']
+                                }
+                            ]
                         }
                     ]
 
@@ -194,37 +200,37 @@ export const removeEnroll = async (req, res) => {
 export const updateEnrollment = async (req, res) => {
     try {
         const { id } = req.params;
-        const {newStatus} = req.body
+        const { newStatus } = req.body
         const userId = req.user.id
-        
-        if(!newStatus){
+
+        if (!newStatus) {
             return res.status(400).json({
-                status:'Bad Request',
-                message:'Status is required'
-            })
-        }    
-
-        const enrollment = await db.ClassEnrollment.findByPk(id)
-
-        if(enrollment.id_user != userId && req.user.role != 'admin'){   
-            return res.status(403).json({
-                status:'Forbidden',
-                message:'You can only update your own enrollments'
+                status: 'Bad Request',
+                message: 'Status is required'
             })
         }
 
-        await enrollment.update({status:newStatus})
-        
+        const enrollment = await db.ClassEnrollment.findByPk(id)
+
+        if (enrollment.id_user != userId && req.user.role != 'admin') {
+            return res.status(403).json({
+                status: 'Forbidden',
+                message: 'You can only update your own enrollments'
+            })
+        }
+
+        await enrollment.update({ status: newStatus })
+
         return res.status(200).json({
-            status:'Success',
-            message:'Enrollment updated succesfully',
+            status: 'Success',
+            message: 'Enrollment updated succesfully',
             enrollment
         })
 
     } catch (error) {
         return res.status(500).json({
-            status:'Internal server error',
-            message:`error: ${error.message}`
+            status: 'Internal server error',
+            message: `error: ${error.message}`
         })
     }
 }
