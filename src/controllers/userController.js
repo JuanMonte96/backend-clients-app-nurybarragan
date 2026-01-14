@@ -397,6 +397,54 @@ export const blockUser = async (req, res) => {
     }
 };
 
+export const getUserClassCounts = async (req, res) => {
+    try {
+        const id_user = req.params.id_user || req.user.id;
+
+        // Permissions: admin/teacher can request any user, others only their own
+        if (req.user.role !== 'admin' && req.user.role !== 'teacher' && req.user.id !== id_user) {
+            return res.status(403).json({
+                status: 'Forbidden',
+                message: 'Dont have permission to see this information'
+            });
+        }
+
+        const user = await db.User.findByPk(id_user, {
+            include: [
+                {
+                    model: db.Subscription,
+                    where: { status: 'active' },
+                    required: false,
+                    include: [{ model: db.Package, attributes: ['class_limit'] }]
+                }
+            ]
+        });
+
+        if (!user) {
+            return res.status(404).json({ status: 'Not Found', message: 'User not found' });
+        }
+
+        const activeSubscriptions = user.Subscriptions || [];
+        const totalClassLimit = activeSubscriptions.reduce((sum, s) => sum + ((s.Package && s.Package.class_limit) || 0), 0);
+
+        const classesUsed = await db.ClassEnrollment.count({
+            where: { id_user, status: 'active' }
+        });
+
+        const classesRemaining = Math.max(0, totalClassLimit - classesUsed);
+
+        return res.status(200).json({
+            status: 'Success',
+            totalClassLimit,
+            classesUsed,
+            classesRemaining,
+            activeSubscriptions: activeSubscriptions.length
+        });
+    } catch (error) {
+        return res.status(500).json({ status: 'error', message: `Internal Server Error: ${error.message}` });
+    }
+}
+
 export const createAdminUser = async (req, res) => {
     try {
         const { name, email, phone, role } = req.body;
