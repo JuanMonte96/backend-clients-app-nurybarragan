@@ -413,7 +413,7 @@ export const getUserClassCounts = async (req, res) => {
             include: [
                 {
                     model: db.Subscription,
-                    where: { status: 'active' },
+                    where: { status: 'active'},
                     required: false,
                     include: [{ model: db.Package, attributes: ['class_limit'] }]
                 }
@@ -427,8 +427,8 @@ export const getUserClassCounts = async (req, res) => {
         const activeSubscriptions = user.Subscriptions || [];
         const totalClassLimit = activeSubscriptions.reduce((sum, s) => sum + ((s.Package && s.Package.class_limit) || 0), 0);
 
-        const classesUsed = await db.ClassEnrollment.count({
-            where: { id_user, status: 'active' }
+        const classesUsed = await db.Attendance.count({
+            where: { id_user, status: 'attended' }
         });
 
         const classesRemaining = Math.max(0, totalClassLimit - classesUsed);

@@ -14,6 +14,11 @@ export const ClassSchedule = sequelize.define('ClassSchedule',
             allowNull: false,
             foreignKey: true
         },
+        id_template: {
+            type: DataTypes.STRING,
+            allowNull:false, 
+            foreignKey: true
+        },
         date_class: {
             type: DataTypes.DATE,
             allowNull: false

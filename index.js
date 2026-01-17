@@ -10,6 +10,7 @@ import { classesRoute } from './src/routes/classesRoute.js';
 import { scheduleRoute } from './src/routes/scheduleRoute.js';
 import { enrollmentRoute } from './src/routes/enrrollmentRoute.js';
 import { attendanceRoute } from './src/routes/attendanceRoute.js';
+import { startScheduleManager } from './src/jobs/scheduleManagerJob.js';
 
 console.log('Starting the server nbdance&fitness...');
 
@@ -25,6 +26,8 @@ try {
 } catch (error) {
     console.error(`unable to connect to the database: ${error.message}`);
 }
+
+startScheduleManager(); 
 
 app.use('/api/webhooks', webhookRouter);
 

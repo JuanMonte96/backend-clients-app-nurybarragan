@@ -7,6 +7,7 @@ import { Class } from "./classModel.js";
 import { ClassEnrollment } from "./classEnrollmentsModel.js";
 import { ClassSchedule } from "./classScheduleModel.js";
 import { Attendance } from "./attendance.js";
+import { ClassScheduleTemplate } from "./classScheduleTemplateModel.js";
 
 export const db = {};
 
@@ -19,6 +20,7 @@ db.Class = Class;
 db.ClassEnrollment = ClassEnrollment;
 db.ClassSchedule = ClassSchedule;
 db.Attendance = Attendance;
+db.ClassScheduleTemplate = ClassScheduleTemplate; 
 
 db.User.hasMany(db.Subscription,{foreignKey:"id_user"});
 db.Subscription.belongsTo(db.User, {foreignKey:"id_user"});
@@ -38,3 +40,6 @@ db.ClassSchedule.belongsTo(db.Class, { foreignKey: "id_class" });
 // Association between Class and User (teacher)
 db.User.hasMany(db.Class, { foreignKey: 'teacher_id', as: 'classes' });
 db.Class.belongsTo(db.User, { foreignKey: 'teacher_id', targetKey: 'id_user', as: 'teacher' });
+
+db.ClassSchedule.belongsTo(db.ClassScheduleTemplate, {foreignKey:'id_template'}); 
+db.ClassScheduleTemplate.hasMany(db.ClassSchedule, {foreignKey:'id_template'})

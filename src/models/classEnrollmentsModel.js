@@ -20,7 +20,7 @@ export const ClassEnrollment = sequelize.define('ClassEnrollment',
             foreignKey: true
         },
         status: {
-            type:DataTypes.ENUM('active', 'blocked', 'removed'),
+            type:DataTypes.ENUM('active', 'removed'),
             defaultValue: 'active',
             allowNull: false
         }

@@ -2,19 +2,117 @@ import { db } from "../models/db.js";
 import dotenv from 'dotenv'
 import QRcode from 'qrcode'
 import { localToUTC, utcToLocal, extractDateAndTime } from "../services/timezone.js";
-
+import { DateTime } from "luxon";
 
 dotenv.config()
 const API_URL = process.env.API_URL
 
-export const createSchedule = async (req, res) => {
+export const createdScheduleTemplate = async (req, res) => {
+    try {
+        const { idClass, startDate, startHour, endHour, timeZone='Europe/Paris', intervaleDays=7, isEnable=true } = req.body;
+
+        const classVerify = await db.Class.findByPk(idClass);
+
+        if (!classVerify) {
+            return res.status(404).json({
+                status: "Not Found",
+                message: "the class doesnt exist anymore"
+            })
+        }
+
+        // Validar que no exista un template idéntico
+        const dayOfWeek = DateTime.fromISO(startDate, { zone: timeZone }).weekday % 7;
+        
+        const existingTemplate = await db.ClassScheduleTemplate.findOne({
+            where: {
+                id_class: idClass,
+                day_of_week: dayOfWeek,
+                start_time: startHour,
+                end_time: endHour,
+                time_zone: timeZone
+            }
+        });
+
+        if (existingTemplate) {
+            return res.status(409).json({
+                status: "Conflict",
+                message: "A template with the same characteristics (day, time, and timezone) already exists for this class"
+            })
+        }
+
+        const template = await db.ClassScheduleTemplate.create({
+            id_class: idClass,
+            day_of_week: dayOfWeek,
+            start_time: startHour,
+            end_time: endHour,
+            time_zone: timeZone,
+            interval_days: intervaleDays,
+            is_enabled: isEnable
+        })
+
+        if (!template) {
+            return res.status(400).json({
+                status: "Bad Request",
+                message: "The template has not created correctly"
+            })
+        }
+
+        const startTimeUtc = localToUTC(startDate, startHour, timeZone);
+        const endTimeUtc = localToUTC(startDate, endHour, timeZone);
+
+        const { date: dateDB, time: startTimeDB } = extractDateAndTime(startTimeUtc)
+        const { time: endTimeDB } = extractDateAndTime(endTimeUtc)
+
+        const scheduleInstance = await db.ClassSchedule.create({
+            id_class: idClass,
+            id_template: template.id_template,
+            date_class: dateDB,
+            start_time: startTimeDB,
+            end_time: endTimeDB,
+            time: timeZone,
+            start_timestamp: startTimeUtc,
+            end_timestamp: endTimeUtc,
+            is_active: true
+        })
+
+        if (!scheduleInstance) return res.status(400).json({
+            status: 'Bad Request',
+            message: 'schedule was not created the good way please try it again'
+        })
+
+        const qrUrl = `${API_URL}/api/attendance/scan-qr/${scheduleInstance.id_schedule}`;
+
+        const qrImage = await QRcode.toDataURL(qrUrl)
+
+        await scheduleInstance.update({ qr_code_url: qrImage })
+
+        return res.status(201).json({
+            status: "created",
+            message: "template and Instance created correctly",
+            templateId: template.id_template,
+            scheduleId: scheduleInstance.id_schedule,
+            firstDate: dateDB,
+            startHour,
+            endHour,
+            timeZone,
+        })
+    } catch (error) {
+        return res.status(500).json({
+            status: "Internal Server Error",
+            message: `An error has ocurred:${error}`
+        })
+    }
+}
+
+
+export const createUnicSchedule = async (req, res) => {
     try {
         const { idClass, dateClass, startHour, endHour, timeZone } = req.body;
 
         const userTimezone = req.user.timezone || 'Europe/Paris';
 
         const classById = await db.Class.findByPk(idClass);
-        
+
         if (!classById) {
             return res.status(404).json({
                 status: 'Not found',
@@ -22,11 +120,11 @@ export const createSchedule = async (req, res) => {
             })
         }
 
-        const startTimeUTC  = localToUTC(dateClass, startHour, timeZone);
+        const startTimeUTC = localToUTC(dateClass, startHour, timeZone);
         const endTimeUTC = localToUTC(dateClass, endHour, timeZone);
 
-        const {date: dateDB , time: startTimeDB} = extractDateAndTime(startTimeUTC)
-        const {time: endTimeDB} = extractDateAndTime(endTimeUTC)
+        const { date: dateDB, time: startTimeDB } = extractDateAndTime(startTimeUTC)
+        const { time: endTimeDB } = extractDateAndTime(endTimeUTC)
 
         const newSchedule = await db.ClassSchedule.create({
             id_class: idClass,
@@ -47,12 +145,12 @@ export const createSchedule = async (req, res) => {
 
         const qrImage = await QRcode.toDataURL(qrUrl)
 
-        await newSchedule.update({qr_code_url: qrImage})
+        await newSchedule.update({ qr_code_url: qrImage })
 
         const startLocal = utcToLocal(newSchedule.start_timestamp, userTimezone);
         const endLocal = utcToLocal(newSchedule.end_timestamp, userTimezone);
 
-        console.log(startLocal.time,endLocal.time)
+        console.log(startLocal.time, endLocal.time)
 
         return res.status(201).json({
             status: 'Created',
@@ -79,7 +177,7 @@ export const getScheduleById = async (req, res) => {
         const userTimezone = req.user.timezone || 'Europe/Paris';
 
         console.log('User Time Zone:', userTimezone);
-        
+
         if (!id) {
             return res.status(400).json({
                 status: 'Bad Request',
@@ -99,12 +197,12 @@ export const getScheduleById = async (req, res) => {
         const startLocal = utcToLocal(scheduleFind.start_timestamp, userTimezone);
         const endLocal = utcToLocal(scheduleFind.end_timestamp, userTimezone);
 
-        console.log(startLocal.time,endLocal.time)
+        console.log(startLocal.time, endLocal.time)
 
         return res.status(200).json({
             status: 'Success',
             message: 'Schedule found successfully',
-            schedule : {
+            schedule: {
                 id_schedule: scheduleFind.id_schedule,
                 id_class: scheduleFind.id_class,
                 date_class: scheduleFind.date_class,
@@ -114,7 +212,7 @@ export const getScheduleById = async (req, res) => {
                 start_timestamp: scheduleFind.start_timestamp,
                 end_timestamp: scheduleFind.end_timestamp,
                 qr_code_url: scheduleFind.qr_code_url,
-                is_active: scheduleFind.is_active, 
+                is_active: scheduleFind.is_active,
             }
         })
 
@@ -128,7 +226,7 @@ export const getScheduleById = async (req, res) => {
 
 export const getAllSchedulesByClass = async (req, res) => {
     try {
-        const {classId} = req.params;
+        const { classId } = req.params;
         const userTimezone = req.user.timezone || 'Europe/Paris';
 
         if (!classId) {

@@ -25,14 +25,14 @@ export const Attendance = sequelize.define('Attendance',
             foreignKey: true
         },
         status:{
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
+            type: DataTypes.ENUM('attended','no_show','excused'),
+            defaultValue: 'no_show',
             allowNull: false
         }
     },{
         tableName: 'attendance',
         timestamps: false,  
-        createdAt: 'scanned_at',
-        updatedAt: false
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
     }
 )
