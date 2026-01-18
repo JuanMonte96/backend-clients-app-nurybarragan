@@ -312,7 +312,7 @@ export const editUser = async (req, res) => {
     try {
         const { id_user } = req.params;
 
-        const { name_user, email_user, password_user } = req.body;
+        const { name_user, email_user, phone } = req.body;
 
         const user = await db.User.findByPk(id_user);
 
@@ -331,11 +331,7 @@ export const editUser = async (req, res) => {
 
         if (name_user) user.name_user = name_user;
         if (email_user) user.email_user = email_user;
-        if (password_user) {
-            const hashedPassword = await bcrypt.hash(password_user, 10);
-            user.password_user = hashedPassword;
-            user.must_change_pass = false;
-        }
+        if (phone) user.telephone_user = phone
 
         await user.save();
 
@@ -495,3 +491,7 @@ export const createAdminUser = async (req, res) => {
         });
     }
 };
+
+export const updatedMedicalCertificaded = (req,res) => {
+    
+}

@@ -4,9 +4,8 @@ import { DateTime } from "luxon";
 import { Op } from "sequelize";
 import { extractDateAndTime } from "../services/timezone.js";
 
-
 export const startScheduleManager = () => {
-    cron.schedule("*/5* * * * * * * * *", async () => {
+    cron.schedule("0 0 * * * * *", async () => {
         console.log("[CRON] Checking Schedules...")
 
         const nowUTC = new Date();
@@ -45,18 +44,28 @@ export const startScheduleManager = () => {
                 const { time: nextEndTimeDB } =
                     extractDateAndTime(nextEnd);
 
-                const existingInstance = await ClassSchedule.findOne({
+                const existingInstance = await db.ClassSchedule.findOne({
                     where: {
-                        template_id: template.id_template,
-                        start_timestamp: nextStart.toJSDate()
+                        id_template: template.id_template,
+                        start_timestamp: {
+                            [Op.between]: [
+                                nextStart.minus({ minutes: 1 }).toJSDate(),
+                                nextStart.plus({ minutes: 1 }).toJSDate()
+                            ]
+                        }
                     }
                 });
 
-                if (existingInstance) continue;
+                if (existingInstance) {
+                    console.log("[CRON] Instance already exist skiping")
+                    continue
+                };
 
-                await ClassSchedule.create({
+                console.log("[CRON] Creating next instance...")
+
+                await db.ClassSchedule.create({
                     id_class: schedule.id_class,
-                    template_id: template.id_template,
+                    id_template: template.id_template,
                     date_class: nextDateDB,
                     start_time: nextStartTimeDB,
                     end_time: nextEndTimeDB,
@@ -65,9 +74,7 @@ export const startScheduleManager = () => {
                     end_timestamp: nextEnd.toJSDate(),
                     is_active: true
                 });
-
             }
-
         } catch (error) {
             console.error("[CRON ERROR]", error);
         }

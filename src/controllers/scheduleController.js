@@ -9,7 +9,7 @@ const API_URL = process.env.API_URL
 
 export const createdScheduleTemplate = async (req, res) => {
     try {
-        const { idClass, startDate, startHour, endHour, timeZone='Europe/Paris', intervaleDays=7, isEnable=true } = req.body;
+        const { idClass, startDate, startHour, endHour, timeZone = 'Europe/Paris', intervaleDays = 7, isEnable = true } = req.body;
 
         const classVerify = await db.Class.findByPk(idClass);
 
@@ -22,7 +22,7 @@ export const createdScheduleTemplate = async (req, res) => {
 
         // Validar que no exista un template idéntico
         const dayOfWeek = DateTime.fromISO(startDate, { zone: timeZone }).weekday % 7;
-        
+
         const existingTemplate = await db.ClassScheduleTemplate.findOne({
             where: {
                 id_class: idClass,
@@ -79,12 +79,6 @@ export const createdScheduleTemplate = async (req, res) => {
             status: 'Bad Request',
             message: 'schedule was not created the good way please try it again'
         })
-
-        const qrUrl = `${API_URL}/api/attendance/scan-qr/${scheduleInstance.id_schedule}`;
-
-        const qrImage = await QRcode.toDataURL(qrUrl)
-
-        await scheduleInstance.update({ qr_code_url: qrImage })
 
         return res.status(201).json({
             status: "created",
@@ -211,8 +205,7 @@ export const getScheduleById = async (req, res) => {
                 time_zone: scheduleFind.time_zone,
                 start_timestamp: scheduleFind.start_timestamp,
                 end_timestamp: scheduleFind.end_timestamp,
-                qr_code_url: scheduleFind.qr_code_url,
-                is_active: scheduleFind.is_active,
+                is_active: scheduleFind.is_active
             }
         })
 
@@ -247,12 +240,15 @@ export const getAllSchedulesByClass = async (req, res) => {
 
         // Traer todos los horarios asociados a la clase
         const schedules = await db.ClassSchedule.findAll({
-            where: { id_class: classId }
+            where: {
+                id_class: classId,
+                is_active: true
+            }
         });
 
         if (!schedules || schedules.length === 0) {
-            return res.status(404).json({
-                status: 'Not found',
+            return res.status(204).json({
+                status: 'No content',
                 message: 'No schedules found for this class'
             })
         }
@@ -291,3 +287,35 @@ export const getAllSchedulesByClass = async (req, res) => {
         })
     }
 };
+
+export const qrAttendaceShow = async (req, res) => {
+    try {
+        const { scheduleId } = req.params;
+
+        const schedule = await db.ClassSchedule.findByPk(scheduleId);
+
+        if (!schedule) {
+            return res.status(404).json({
+                status: "Not Found",
+                message: "Schedule doesnt was not found"
+            })
+        }
+
+        if (!schedule.qr_code_url) {
+            const qrUrl = `${API_URL}/api/attendance/scan-qr/${schedule.id_schedule}`;
+            const qrImage = await QRcode.toDataURL(qrUrl);
+            await schedule.update({ qr_code_url: qrImage });
+        }
+
+        return res.status(200).json({
+            status:"Success",
+            message:"Qr found it correctly",
+            qrImage: schedule.qr_code_url
+        })
+    } catch (error) {
+        return res.status(500).json({
+            status:"internal server error",
+            message: `There was an error:${error.message}`
+        })
+    }
+}

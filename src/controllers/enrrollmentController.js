@@ -1,4 +1,6 @@
 import { db } from '../models/db.js'
+import { utcToLocal } from '../services/timezone.js';
+import { DateTime } from 'luxon';
 
 export const createEnrrollment = async (req, res) => {
     try {
@@ -11,6 +13,19 @@ export const createEnrrollment = async (req, res) => {
             return res.status(404).json({
                 status: 'Not Found',
                 message: 'Schedule not found'
+            })
+        }
+
+        const startTime = DateTime.fromJSDate(scheduleToEnroll.start_timestamp, { zone: 'utc' })
+
+        const limitRange = startTime.minus({ minutes: 30 });
+
+        const now = DateTime.utc()
+
+        if (now >= limitRange) {
+            return res.status(403).json({
+                status: "Forbidden",
+                message: "The Class already start or its about to start please wait for the next schedule"
             })
         }
 
@@ -101,6 +116,7 @@ export const createEnrrollment = async (req, res) => {
 export const getEnrollmentsById = async (req, res) => {
     try {
         const userId = req.user.id;
+        const userTimezone = req.user.timezone || 'Europe/Paris'
 
         const user = await db.User.findByPk(userId);
 
@@ -113,12 +129,12 @@ export const getEnrollmentsById = async (req, res) => {
 
 
         const enrollments = await db.ClassEnrollment.findAll({
-            where: { id_user: userId , status: 'active'},
+            where: { id_user: userId, status: 'active' },
             attributes: ['id_enrollment', 'status'],
             include: [
                 {
                     model: db.ClassSchedule,
-                    attributes: ['id_schedule', 'date_class', 'start_time', 'end_time'],
+                    attributes: ['id_schedule', 'date_class', 'start_timestamp', 'end_timestamp'],
                     include: [
                         {
                             model: db.Class,
@@ -145,13 +161,25 @@ export const getEnrollmentsById = async (req, res) => {
             })
         }
 
+        const enrollmentsFormatted = enrollments.map(enrollment => {
+            const schedule = enrollment.ClassSchedule.toJSON();
 
+            const startTimeLocal = utcToLocal(schedule.start_timestamp, userTimezone); 
+            const endTimeLocal = utcToLocal(schedule.end_timestamp, userTimezone); 
 
+            schedule.start_local = startTimeLocal.time; 
+            schedule.end_local = endTimeLocal.time; 
+
+            return {
+                ...enrollment.toJSON(),
+                ClassSchedule: schedule
+            };
+        });
 
         return res.status(200).json({
             status: 'Success',
             message: 'Enrollments found successfully',
-            enrollments
+            enrollments: enrollmentsFormatted
         })
 
     } catch (error) {
@@ -246,31 +274,31 @@ export const softDeleteEnrollment = async (req, res) => {
 
 
         const enrollmentToBlock = await db.ClassEnrollment.findByPk(idEnrollment)
-        if(!enrollmentToBlock){
+        if (!enrollmentToBlock) {
             return res.status(404).json({
-                status:"Not Found",
+                status: "Not Found",
                 message: "enrollment has not found"
             })
         }
-        
-        if(userId != enrollmentToBlock.id_user && req.user.role != "admin"){
+
+        if (userId != enrollmentToBlock.id_user && req.user.role != "admin") {
             return res.status(403).json({
-                status:"Forbidden",
-                message:"You are not available to use this "
+                status: "Forbidden",
+                message: "You are not available to use this "
             })
         }
 
-        await enrollmentToBlock.update({status: softDelete})
+        await enrollmentToBlock.update({ status: softDelete })
 
         return res.status(200).json({
-            status:"Success",
-            message:"Enrollment Dealete succesfully"
+            status: "Success",
+            message: "Enrollment Dealete succesfully"
         })
 
 
     } catch (error) {
         return res.status(500).json({
-            status:"Internal Server Error",
+            status: "Internal Server Error",
             message: `An Error has ocurre ${error.message}`
         })
     }
