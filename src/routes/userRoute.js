@@ -1,8 +1,9 @@
 import express from 'express';
-import { loginUser, getAllUsers, profileUser, changePassword, editUser, blockUser, createAdminUser, getUserClassCounts,  } from '../controllers/userController.js';
+import { loginUser, getAllUsers, profileUser, changePassword, editUser, blockUser, createAdminUser, getUserClassCounts, uploadMedicalCertificate } from '../controllers/userController.js';
 import { auth } from '../middlewares/auth.js'; 
 import { authorize } from '../middlewares/authorization.js';
 import { verifyChangePassword } from '../middlewares/passwordChange.js';
+import { uploadMedicalCertificated } from '../middlewares/upload.js';
 
 export const userRoute = express.Router();
 
@@ -13,4 +14,5 @@ userRoute.put('/changePassword', auth, changePassword);
 userRoute.put('/editProfile/:id_user', auth, verifyChangePassword, editUser);
 userRoute.patch('/blockUser/:id_user', auth, verifyChangePassword, blockUser);
 userRoute.post('/register',auth,verifyChangePassword,authorize('admin'),createAdminUser);
-userRoute.get('/classRemaining', auth,verifyChangePassword, getUserClassCounts)
+userRoute.get('/classRemaining', auth,verifyChangePassword, getUserClassCounts);
+userRoute.patch('/upload-certificated', auth,verifyChangePassword,uploadMedicalCertificated.single('certificate'), uploadMedicalCertificate);

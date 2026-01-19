@@ -52,9 +52,9 @@ export const loginUser = async (req, res) => {
         const user = await db.User.findOne({ where: { email_user: email } });
 
         const isValidPassword = await bcrypt.compare(password, user.password_user);
-        
+
         let userTimezone = user.time_zone || 'UTC';
-        
+
         if (timezone && DateTime.local().setZone(timezone).isValid && user.time_zone !== timezone) {
             await db.User.update(
                 { time_zone: timezone },
@@ -71,10 +71,11 @@ export const loginUser = async (req, res) => {
         };
         const payload = {
             id: user.id_user,
+            name: user.name_user,
             email: user.email_user,
             role: user.role,
             must_change_pass: user.must_change_pass,
-            timezone: userTimezone 
+            timezone: userTimezone
         };
 
         if (!user) {
@@ -191,7 +192,7 @@ export const getAllUsers = async (req, res) => {
         console.log(db.User.getAttributes());
 
         const { count, rows } = await db.User.findAndCountAll({
-            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone","created_at"], // selecciona columnas necesarias
+            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"], // selecciona columnas necesarias
             limit,
             offset
         });
@@ -242,7 +243,7 @@ export const profileUser = async (req, res) => {
             })
         }
         const user = await db.User.findByPk(id_user, {
-            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"]
+            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at", "telephone_user"]
         })
         const subscriptionByUser = await db.Subscription.findAll({
             where: { id_user: id_user },
@@ -409,7 +410,7 @@ export const getUserClassCounts = async (req, res) => {
             include: [
                 {
                     model: db.Subscription,
-                    where: { status: 'active'},
+                    where: { status: 'active' },
                     required: false,
                     include: [{ model: db.Package, attributes: ['class_limit'] }]
                 }
@@ -492,6 +493,36 @@ export const createAdminUser = async (req, res) => {
     }
 };
 
-export const updatedMedicalCertificaded = (req,res) => {
-    
+export const uploadMedicalCertificate = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        if (!req.file) {
+            return res.status(400).json({
+                status: "Bad Request",
+                message: "The file it has been not send it"
+            })
+        };
+
+        const medicalCertifcate = req.file.filename
+
+        await db.User.update({
+            medical_certificated: medicalCertifcate
+        },
+            { where: { id_user: userId } }
+        )
+
+        return res.status(200).json({
+            status:"Success",
+            message:"Medical Certifacte upload correctly",
+            certificated: medicalCertifcate
+        })
+
+
+    } catch (error) {
+        return res.status(500).json({
+            status:"internal server error", 
+            message:`There was an error:${error.message}`
+        })
+    }
 }

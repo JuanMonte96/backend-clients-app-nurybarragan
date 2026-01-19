@@ -44,6 +44,13 @@ export const createEnrrollment = async (req, res) => {
             ]
         });
 
+        if(user.medical_certificated === 'Defaultcertificate.pdf'){
+            return res.status(403).json({
+                status:"Forbidden",
+                message:"Yo Have to upload your certificated in configurations firts"
+            })
+        }; 
+
         const alreadyEnroll = await db.ClassEnrollment.findOne({ where: { id_user: userId, id_schedule: scheduleId, status: 'active' } })
 
         if (alreadyEnroll) {

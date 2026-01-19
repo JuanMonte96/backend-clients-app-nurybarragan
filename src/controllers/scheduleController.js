@@ -98,7 +98,6 @@ export const createdScheduleTemplate = async (req, res) => {
     }
 }
 
-
 export const createUnicSchedule = async (req, res) => {
     try {
         const { idClass, dateClass, startHour, endHour, timeZone } = req.body;
