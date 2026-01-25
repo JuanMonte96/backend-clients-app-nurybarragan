@@ -5,7 +5,7 @@ import { Op } from "sequelize";
 import { extractDateAndTime } from "../services/timezone.js";
 
 export const startScheduleManager = () => {
-    cron.schedule("*0 0 * * * *", async () => {
+    cron.schedule("0 0 * * * *", async () => {
         console.log("[CRON] Checking Schedules...")
 
         const nowUTC = new Date();

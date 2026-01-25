@@ -8,6 +8,7 @@ import { ClassEnrollment } from "./classEnrollmentsModel.js";
 import { ClassSchedule } from "./classScheduleModel.js";
 import { Attendance } from "./attendance.js";
 import { ClassScheduleTemplate } from "./classScheduleTemplateModel.js";
+import { Contact } from "./contact.js";
 
 export const db = {};
 
@@ -21,6 +22,7 @@ db.ClassEnrollment = ClassEnrollment;
 db.ClassSchedule = ClassSchedule;
 db.Attendance = Attendance;
 db.ClassScheduleTemplate = ClassScheduleTemplate; 
+db.Contact = Contact;
 
 db.User.hasMany(db.Subscription,{foreignKey:"id_user"});
 db.Subscription.belongsTo(db.User, {foreignKey:"id_user"});

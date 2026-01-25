@@ -11,6 +11,7 @@ import { scheduleRoute } from './src/routes/scheduleRoute.js';
 import { enrollmentRoute } from './src/routes/enrrollmentRoute.js';
 import { attendanceRoute } from './src/routes/attendanceRoute.js';
 import { startScheduleManager } from './src/jobs/scheduleManagerJob.js';
+import { contactRouter } from './src/routes/contactRoute.js';
 
 console.log('Starting the server nbdance&fitness...');
 
@@ -42,6 +43,7 @@ app.use('/api/classes', classesRoute);
 app.use('/api/schedule',scheduleRoute);
 app.use('/api/enrollments', enrollmentRoute);
 app.use('/api/attendance', attendanceRoute);
+app.use('/api/contactUs', contactRouter)
 
 app.get('/',(req, res)=> {
     res.json({

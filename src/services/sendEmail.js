@@ -32,5 +32,33 @@ export const sendEmail = async (to, name, tempPassword) => {
         console.log('Email enviado con exito a', to);
     } catch (error) {
         console.error('Error al enviar el email:', error);
+        throw new Error(`Error al enviar el email: ${error}`);
     }
 };
+
+
+export const sendContactNotificacion = async (name_client, email_client, telephone_client, subject, description) => {
+    try {
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER,
+            subject: `Contacto: ${subject}`,
+            html: `<h1>Nuevo Contacto por parte del cliente ${name_client}</h1>
+            <p><strong>Correo Electrónico:</strong>${email_client}</p>
+            <br>
+            <p><strong>Teléfono:</strong> ${telephone_client}</p>
+            <br>
+            <p><strong>Asunto:</strong> ${subject}</p>
+            <br>
+            <p><strong>Descripción:</strong> ${description}</p>
+            <br>
+            <span>Según corresponda contactar por ventas o soporte al cliente</span>`
+        })
+
+        console.log("notification send it with success to the admin")
+
+    } catch (error) {
+        console.error(`Error sending contact notification by email:${error}`);
+        throw new Error (`Error sending contact notification by email: ${error}`);
+    }
+}
