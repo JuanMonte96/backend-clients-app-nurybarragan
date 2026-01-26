@@ -47,9 +47,18 @@ export const createUser = async (session) => {
 
 export const loginUser = async (req, res) => {
     try {
-        const { email, password, timezone } = req.body;
+        const { password } = req.body;
+
+        const { email, timezone } = req.validateUserData;
 
         const user = await db.User.findOne({ where: { email_user: email } });
+
+        if (!user){
+            return res.status(404).json({
+                status: 'not Found',
+                message: 'User not found with this email'
+            })
+        }
 
         const isValidPassword = await bcrypt.compare(password, user.password_user);
 
@@ -270,7 +279,8 @@ export const profileUser = async (req, res) => {
 export const changePassword = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { currentPassword, newPassword } = req.body;
+        const { currentPassword } = req.body;
+        const { newPassword } = req.validatePasswordData;
 
         const user = await db.User.findByPk(userId);
 
@@ -513,16 +523,16 @@ export const uploadMedicalCertificate = async (req, res) => {
         )
 
         return res.status(200).json({
-            status:"Success",
-            message:"Medical Certifacte upload correctly",
+            status: "Success",
+            message: "Medical Certifacte upload correctly",
             certificated: medicalCertifcate
         })
 
 
     } catch (error) {
         return res.status(500).json({
-            status:"internal server error", 
-            message:`There was an error:${error.message}`
+            status: "internal server error",
+            message: `There was an error:${error.message}`
         })
     }
 }

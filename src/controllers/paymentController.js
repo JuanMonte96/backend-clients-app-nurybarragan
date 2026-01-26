@@ -1,6 +1,5 @@
 import { createCheckoutSession } from "../services/stripe.js";
 import {db} from '../models/db.js';
-import { validatePaymentDataByField } from '../validators/validatePackages.js';
 import dotenv from 'dotenv'
 
 dotenv.config();
@@ -9,31 +8,16 @@ const URL_BASE = process.env.URL_FRONTEND_BASE
 
 export const startPayment = async (req, res) => {
     try {
-        const {stripe_price_id, name, email, id_package, telephone} = req.body; 
-
-        // Validar los datos con Zod
-        const validation = validatePaymentDataByField({
-            stripe_price_id,
-            name,
-            email,
-            telephone,
-            id_package
-        });
-
-        if (!validation.success) {
-            return res.status(400).json({
-                status: 'Validation Error',
-                errors: validation.errors
-            });
-        }
+        // Los datos ya vienen validados desde el middleware
+        const {stripe_price_id, name, email, id_package, telephone} = req.validatedPayment;
 
         const session = await createCheckoutSession(
-            validation.data.stripe_price_id,
+            stripe_price_id,
             {
-                name: validation.data.name,
-                email: validation.data.email,
-                custom_id: validation.data.id_package,
-                telephone: validation.data.telephone
+                name,
+                email,
+                custom_id: id_package,
+                telephone
             },
             `${URL_BASE}/login`,
             URL_BASE

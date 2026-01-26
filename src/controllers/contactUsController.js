@@ -3,7 +3,7 @@ import { sendContactNotificacion } from "../services/sendEmail.js";
 
 export const createContactEntry = async (req, res) => {
     try {
-        const { name_client, email_client, telephone_client, subject, description } = req.body;
+        const { name_client, email_client, telephone_client, subject, description } = req.validatedContact;
 
         const newContact = await db.Contact.create({
             name_client,
