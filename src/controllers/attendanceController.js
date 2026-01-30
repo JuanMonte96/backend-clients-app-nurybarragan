@@ -6,6 +6,7 @@ export const attendanceViaQr = async (req, res) => {
         const { scheduleId } = req.params;
         const userId = req.user.id;
         const userTimezone = req.user.timezone || 'Europe/Paris';
+        const status = req.body;
 
         const schedule = await db.ClassSchedule.findByPk(scheduleId, {
             include: [{
@@ -88,7 +89,7 @@ export const attendanceViaQr = async (req, res) => {
             id_enrollment: enrollment.id_enrollment,
             id_schedule: scheduleId,
             id_user: userId,
-            status: true
+            status: status
         });
 
         return res.status(201).json(
@@ -113,7 +114,7 @@ export const markAttendance = async (req, res) => {
             include: [
                 {
                     model: db.ClassSchedule,
-                    include: ['id_schedule', 'date_class', 'start_time', 'end_time', 'is_active']
+                    attributes: ['id_schedule', 'date_class', 'start_timestamp', 'end_timestamp', 'is_active']
                 }
             ]
         });
@@ -140,7 +141,7 @@ export const markAttendance = async (req, res) => {
         };
 
         const existingAttendance = await db.Attendance.findOne({
-            where: { id_enrollment: enrollmentId }
+            where: { id_enrollment: enrollmentId, id_user: userId, id_schedule: enrollment.ClassSchedule.id_schedule }
         });
 
         if (existingAttendance) {
@@ -157,6 +158,11 @@ export const markAttendance = async (req, res) => {
             status: status
         })
 
+        if (attendance){
+            enrollment.status = 'removed'
+            await enrollment.save()
+        }
+
         return res.status(201).json({
             status: 'Created',
             message: 'Attendance marked successfully',
@@ -165,7 +171,7 @@ export const markAttendance = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             status: 'Internal Server Error',
-            message: `Error: ${error.message}`
+            message: `Error Marking Attendance: ${error.message}`
         })
     }
 

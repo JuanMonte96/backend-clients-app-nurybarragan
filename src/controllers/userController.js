@@ -280,7 +280,7 @@ export const changePassword = async (req, res) => {
     try {
         const userId = req.user.id;
         const { currentPassword } = req.body;
-        const { newPassword } = req.validatePasswordData;
+        const { password } = req.validatePasswordData;
 
         const user = await db.User.findByPk(userId);
 
@@ -299,7 +299,7 @@ export const changePassword = async (req, res) => {
             })
         };
 
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         user.password_user = hashedPassword;
         user.must_change_pass = false;

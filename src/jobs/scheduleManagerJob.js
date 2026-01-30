@@ -6,7 +6,7 @@ import { extractDateAndTime } from "../services/timezone.js";
 
 export const startScheduleManager = () => {
     cron.schedule("0 0 * * * *", async () => {
-        console.log("[CRON] Checking Schedules...")
+        console.log("[CRON] Checking Schedules and attendance...")
 
         const nowUTC = new Date();
         try {
@@ -22,6 +22,36 @@ export const startScheduleManager = () => {
 
             for (const schedule of schedulesToClose) {
                 await schedule.update({ is_active: false })
+
+                // Process attendances for active enrollments: create 'no_show' if none
+                try {
+                    const enrollments = await db.ClassEnrollment.findAll({
+                        where: { id_schedule: schedule.id_schedule, status: 'active' }
+                    });
+
+                    for (const enrollment of enrollments) {
+                        const existingAttendance = await db.Attendance.findOne({
+                            where: {
+                                id_enrollment: enrollment.id_enrollment,
+                                id_schedule: schedule.id_schedule,
+                                id_user: enrollment.id_user
+                            }
+                        });
+
+                        if (!existingAttendance) {
+                            await db.Attendance.create({
+                                id_enrollment: enrollment.id_enrollment,
+                                id_schedule: schedule.id_schedule,
+                                id_user: enrollment.id_user,
+                                status: 'no_show'
+                            });
+                        }
+
+                        await enrollment.update({ status: 'removed' });
+                    }
+                } catch (err) {
+                    console.error('[CRON] attendance processing error for schedule', schedule.id_schedule, err);
+                }
 
                 if (!schedule.id_template) continue
 

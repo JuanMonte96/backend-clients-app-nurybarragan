@@ -82,14 +82,13 @@ export const validatePasswordMiddleware = (req, res, next) => {
                 errors: validatePasswordData.errors
             })
         }
-
         req.validatePasswordData = validatePasswordData.data;
         next();
 
     } catch (error) {
         return res.status(500).json({
             status: 'Internal server Error',
-            message: `Error middleware validate Paasword ${error.message}`
+            message: `Error middleware validate Password ${error.message}`
         })
     }
 }; 

@@ -18,7 +18,7 @@ export const createEnrrollment = async (req, res) => {
 
         const startTime = DateTime.fromJSDate(scheduleToEnroll.start_timestamp, { zone: 'utc' })
 
-        const limitRange = startTime.minus({ minutes: 30 });
+        const limitRange = startTime.minus({ minutes: 15 });
 
         const now = DateTime.utc()
 
@@ -47,7 +47,7 @@ export const createEnrrollment = async (req, res) => {
         if(user.medical_certificated === 'Defaultcertificate.pdf'){
             return res.status(403).json({
                 status:"Forbidden",
-                message:"Yo Have to upload your certificated in configurations firts"
+                message:"You Have to upload your certificated in configurations firts"
             })
         }; 
 

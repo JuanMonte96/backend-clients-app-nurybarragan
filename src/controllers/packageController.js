@@ -1,4 +1,4 @@
-import {db} from "../models/db.js";
+import { db } from "../models/db.js";
 import { createProduct } from "../services/stripe.js";
 
 export const createPackage = async (req, res) => {
@@ -36,11 +36,11 @@ export const createPackage = async (req, res) => {
 
 };
 
-export const getPackages = async (req,res)=> {
+export const getPackages = async (req, res) => {
     try {
         const packages = await db.Package.findAll();
 
-        if(packages.length === 0){
+        if (packages.length === 0) {
             return res.status(204).json({
                 status: 'No content',
                 message: 'No packages found'
