@@ -435,7 +435,7 @@ export const getUserClassCounts = async (req, res) => {
         const totalClassLimit = activeSubscriptions.reduce((sum, s) => sum + ((s.Package && s.Package.class_limit) || 0), 0);
 
         const classesUsed = await db.Attendance.count({
-            where: { id_user, status: 'attended' }
+            where: { id_user, status: ['attended', 'no_show'] }
         });
 
         const classesRemaining = Math.max(0, totalClassLimit - classesUsed);

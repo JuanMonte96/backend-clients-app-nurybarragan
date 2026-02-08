@@ -1,5 +1,5 @@
 import { db } from '../models/db.js';
-import { localToUTC, utcToLocal, isTimeWithinRange, getNowInTimeZone } from '../services/timezone.js';
+import { utcToLocal, isTimeWithinRange, getNowInTimeZone } from '../services/timezone.js';
 
 export const attendanceViaQr = async (req, res) => {
     try {

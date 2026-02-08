@@ -44,12 +44,14 @@ export const createEnrrollment = async (req, res) => {
             ]
         });
 
-        if(user.medical_certificated === 'Defaultcertificate.pdf'){
+        console.log(user)
+
+        if (user.medical_certificated === 'Defaultcertificate.pdf') {
             return res.status(403).json({
-                status:"Forbidden",
-                message:"You Have to upload your certificated in configurations firts"
+                status: "Forbidden",
+                message: "You Have to upload your certificated in configurations firts"
             })
-        }; 
+        };
 
         const alreadyEnroll = await db.ClassEnrollment.findOne({ where: { id_user: userId, id_schedule: scheduleId, status: 'active' } })
 
@@ -72,33 +74,6 @@ export const createEnrrollment = async (req, res) => {
             })
         }
 
-        let totalClassesAvailable = 0;
-        let subscriptionToUse = null;
-
-        for (const subscription of user.Subscriptions) {
-            const classesUsed = await db.ClassEnrollment.count({
-                where: {
-                    id_user: userId,
-                    status: 'active'
-                }
-            })
-
-            const availableClasses = subscription.Package.class_limit - classesUsed
-
-            if (availableClasses > 0 && !subscriptionToUse) {
-                subscriptionToUse = subscription;
-            }
-            totalClassesAvailable += availableClasses;
-        }
-
-
-        if (totalClassesAvailable <= 0) {
-            return res.status(400).json({
-                status: 'Bad request',
-                message: 'You have no available calsses in your subscription anymore'
-            })
-        }
-
         const newEnrollment = await db.ClassEnrollment.create({
             id_schedule: scheduleId,
             id_user: userId,
@@ -108,8 +83,7 @@ export const createEnrrollment = async (req, res) => {
         return res.status(201).json({
             status: 'create',
             message: 'enrollment created succesfully',
-            newEnrollment,
-            classesRemaning: totalClassesAvailable - 1
+            newEnrollment
         })
     } catch (error) {
         console.log(error)
@@ -171,11 +145,11 @@ export const getEnrollmentsById = async (req, res) => {
         const enrollmentsFormatted = enrollments.map(enrollment => {
             const schedule = enrollment.ClassSchedule.toJSON();
 
-            const startTimeLocal = utcToLocal(schedule.start_timestamp, userTimezone); 
-            const endTimeLocal = utcToLocal(schedule.end_timestamp, userTimezone); 
+            const startTimeLocal = utcToLocal(schedule.start_timestamp, userTimezone);
+            const endTimeLocal = utcToLocal(schedule.end_timestamp, userTimezone);
 
-            schedule.start_local = startTimeLocal.time; 
-            schedule.end_local = endTimeLocal.time; 
+            schedule.start_local = startTimeLocal.time;
+            schedule.end_local = endTimeLocal.time;
 
             return {
                 ...enrollment.toJSON(),
