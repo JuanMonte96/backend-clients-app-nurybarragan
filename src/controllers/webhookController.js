@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import { createUser } from './userController.js';
-import { sendEmail } from '../services/sendEmail.js';
+import { sendEmailApiGmail } from '../services/sendEmail.js';
 import { createPayment } from './paymentController.js';
 import { createsubscription } from './subscriptionController.js';
 
@@ -42,7 +42,7 @@ export const stripeWebhookHandler = async (req, res) => {
 
       }
       
-      await sendEmail(newUser.email, newUser.nombre, newUser.password);
+      await sendEmailApiGmail(newUser.email, newUser.nombre, newUser.password);
       // - Guardar pago
       const newPayment = await createPayment(newUser, session);
       // - Guardar usuario
