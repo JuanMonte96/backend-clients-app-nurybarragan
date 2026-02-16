@@ -229,20 +229,12 @@ export const profileUser = async (req, res) => {
                     status: 'Not Found',
                     message: 'User not found'
                 })
-            }
-            const subscriptionByUser = await db.Subscription.findAll({
-                where: { id_user: id_user },
-                include: [{
-                    model: db.Package,
-                    attributes: ["name_package", "description_package", "duration_package", "class_limit"]
-                }]
+            };
 
-            });
             return res.status(200).json({
                 status: 'success',
                 message: 'User profile',
-                user,
-                subscriptionByUser
+                user
             });
         }
         if (req.user.id !== id_user) {
@@ -258,14 +250,14 @@ export const profileUser = async (req, res) => {
             where: { id_user: id_user },
             include: [{
                 model: db.Package,
-                attributes: ["name_package", "description_package", "duration_package", "class_limit"]
+                attributes: ["name_package", "description_english", "description_spanish", "description_french", "duration_package", "class_limit"]
             }]
         });
         return res.status(200).json({
             status: 'success',
             message: 'User profile',
             user: user,
-            subscriptionByUser
+            subscriptionByUser: subscriptionByUser
         });
     }
     catch (error) {

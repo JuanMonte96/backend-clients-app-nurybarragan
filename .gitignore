@@ -1,4 +1,4 @@
 .env
-uploads/certificates/
-uploads/medical-certificates/
+upload/certificates/
+upload/medical-certificates/
 oauth-init.js

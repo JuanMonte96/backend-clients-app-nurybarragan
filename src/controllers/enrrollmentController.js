@@ -101,6 +101,14 @@ export const getEnrollmentsById = async (req, res) => {
 
         const user = await db.User.findByPk(userId);
 
+        if(user.role === 'admin') {
+            return res.status(204).json({
+                status: 'No content',
+                message: 'Admin users do not have enrollments to display at this point'
+            })
+        }
+
+
         if (!user || user.is_blocked) {
             return res.status(403).json({
                 status: 'Forbiden',
