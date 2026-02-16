@@ -10,7 +10,9 @@ export const Class = sequelize.define('Class',
             allowNull:false,
         },
         title_class: DataTypes.TEXT,
-        description_class: DataTypes.TEXT,
+        description_english: DataTypes.TEXT,
+        description_spanish: DataTypes.TEXT,
+        description_french: DataTypes.TEXT,
         level_class: {
             type: DataTypes.ENUM('beginner', 'intermediate', 'advanced'),
             defaultValue:'beginner'

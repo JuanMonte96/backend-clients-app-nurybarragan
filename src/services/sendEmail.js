@@ -86,7 +86,7 @@ export const sendEmailApiGmail = async (to, name, tempPassword) => {
     <!-- Header -->
     <div style="text-align:center;padding:30px 20px;border-bottom:1px solid #eeeeee;">
       <img
-        src="https://tudominio.com/logo.png"
+        src="${process.env.URL_FRONTEND}/assets/final-logo-nb.png"
         alt="NB Dance & Fitness"
         style="max-width:160px;margin-bottom:15px;"
       />

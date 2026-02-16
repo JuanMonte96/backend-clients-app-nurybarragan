@@ -3,7 +3,7 @@ import { generateToken } from "../services/Jwt.js";
 import { createTempPassword } from "../services/password.js";
 import bcrypt from 'bcrypt';
 import { Op } from "sequelize";
-import { sendEmail } from "../services/sendEmail.js";
+import { sendEmail, sendEmailApiGmail } from "../services/sendEmail.js";
 import { DateTime } from "luxon";
 
 
@@ -201,7 +201,7 @@ export const getAllUsers = async (req, res) => {
         console.log(db.User.getAttributes());
 
         const { count, rows } = await db.User.findAndCountAll({
-            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"], // selecciona columnas necesarias
+            attributes: ["id_user", "name_user", "email_user", "telephone_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"], // selecciona columnas necesarias
             limit,
             offset
         });
@@ -222,7 +222,7 @@ export const profileUser = async (req, res) => {
         const { id_user } = req.params;
         if (req.user.role === 'admin' || req.user.role === 'teacher') {
             const user = await db.User.findByPk(id_user, {
-                attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"]
+                attributes: ["id_user", "name_user", "email_user", "telephone_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"]
             })
             if (!user) {
                 return res.status(404).json({
@@ -252,7 +252,7 @@ export const profileUser = async (req, res) => {
             })
         }
         const user = await db.User.findByPk(id_user, {
-            attributes: ["id_user", "name_user", "email_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at", "telephone_user"]
+            attributes: ["id_user", "name_user", "email_user", "telephone_user", "role", "medical_certificated", "is_blocked", "time_zone", "created_at"]
         })
         const subscriptionByUser = await db.Subscription.findAll({
             where: { id_user: id_user },
@@ -482,7 +482,7 @@ export const createAdminUser = async (req, res) => {
             });
         }
 
-        await sendEmail(email, name, tempPassword);
+        await sendEmailApiGmail(email, name, tempPassword);
 
         return res.status(201).json({
             status: 'Created',

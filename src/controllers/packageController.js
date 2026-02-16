@@ -3,17 +3,19 @@ import { createProduct } from "../services/stripe.js";
 
 export const createPackage = async (req, res) => {
     try {
-        const { name, description, price, duration, class_limit } = req.body;
+        const { name, descriptionEnglish, descriptionSpanish, descriptionFrench, price, duration, class_limit } = req.body;
         const Package = db.Package;
         const { stripeProduct, stripePrice, productFromStripe } = await createProduct({
             name,
-            description,
+            description: descriptionEnglish,
             price
         });
 
         const newPackage = await Package.create({
             name_package: name,
-            description_package: description,
+            description_english: descriptionEnglish,
+            description_spanish: descriptionSpanish,
+            description_french: descriptionFrench,
             price_package: price,
             duration_package: duration,
             class_limit: class_limit,

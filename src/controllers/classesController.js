@@ -2,7 +2,7 @@ import { db } from '../models/db.js';
 
 export const createClass = async (req, res) => {
   try {
-    const { title, classDescription, level, teacherId } = req.body;
+    const { title, descriptionEnglish, descriptionSpanish, descriptionFrench, level, teacherId } = req.body;
 
     // 1️⃣ Validar si el profesor existe y está activo
     const teacher = await db.User.findOne({
@@ -31,7 +31,9 @@ export const createClass = async (req, res) => {
 
     const newClass = await db.Class.create({
       title_class: title,
-      description_class: classDescription,
+      description_english: descriptionEnglish,
+      description_spanish: descriptionSpanish,
+      description_french: descriptionFrench,
       level_class: level,
       teacher_id: teacherId
     });
@@ -83,7 +85,9 @@ export const getAllClasses = async (req, res) => {
       return {
         id_class: cls.id_class,
         title_class: cls.title_class,
-        description_class: cls.description_class,
+        description_english: cls.description_english,
+        description_spanish: cls.description_spanish,
+        description_french: cls.description_french,
         level_class: cls.level_class,
         is_blocked: cls.is_blocked,
         created_at: cls.created_at,
@@ -128,7 +132,7 @@ export const getAllClasses = async (req, res) => {
 
 export const updatedClass = async (req, res) => {
   try {
-    const { id, title, classDescription, level, teacherId, isBlocked } = req.body;
+    const { id, title, descriptionEnglish, descriptionSpanish, descriptionFrench, level, teacherId, isBlocked } = req.body;
     const classToUpdated = await db.Class.findByPk(id);
     if (!classToUpdated) {
       return res.status(404).json({
@@ -138,7 +142,9 @@ export const updatedClass = async (req, res) => {
     }
     await classToUpdated.update({
       title_class: title,
-      description_class: classDescription,
+      description_english: descriptionEnglish,
+      description_spanish: descriptionSpanish,
+      description_french: descriptionFrench,
       level_class: level,
       teacher_id: teacherId,
       is_blocked: isBlocked
