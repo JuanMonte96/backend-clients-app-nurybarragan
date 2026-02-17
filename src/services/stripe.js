@@ -34,7 +34,7 @@ export const createProduct = async (product) => {
 
 export const createCheckoutSession = async (priceId, customerData, successUrl, cancelUrl) => {
   const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card', 'paypal'],
+    payment_method_types: ['card'],
     line_items: [{
       price: priceId,
       quantity: 1
