@@ -44,7 +44,6 @@ export const createEnrrollment = async (req, res) => {
             ]
         });
 
-        console.log(user)
 
         if (user.medical_certificated === 'Defaultcertificate.pdf') {
             return res.status(403).json({
@@ -74,6 +73,33 @@ export const createEnrrollment = async (req, res) => {
             })
         }
 
+        const hasUnlimitedPackage = user.Subscriptions.some((subscription) => {
+            return subscription.status === 'active' && subscription.Package?.class_limit == null
+        })
+
+        if (!hasUnlimitedPackage) {
+            const totalClassesAvailable = user.Subscriptions.reduce((total, subscription) => {
+                if (subscription.status === 'active') {
+                    return total + (subscription.Package?.class_limit || 0)
+                }
+                return total
+            }, 0)
+
+            const totalEnrollments = await db.ClassEnrollment.count({
+                where: {
+                    id_user: userId,
+                    status: 'active'
+                }
+            })
+
+            if (totalClassesAvailable <= totalEnrollments) {
+                return res.status(403).json({
+                    status: 'Forbidden',
+                    message: 'We are sorry but you have reached the limit of classes to enroll, please consider to buy a new package.'
+                })
+            }
+        }
+
         const newEnrollment = await db.ClassEnrollment.create({
             id_schedule: scheduleId,
             id_user: userId,
@@ -81,8 +107,8 @@ export const createEnrrollment = async (req, res) => {
         })
 
         return res.status(201).json({
-            status: 'create',
-            message: 'enrollment created succesfully',
+            status: 'Created',
+            message: 'Enrollment created successfully',
             newEnrollment
         })
     } catch (error) {
@@ -101,7 +127,7 @@ export const getEnrollmentsById = async (req, res) => {
 
         const user = await db.User.findByPk(userId);
 
-        if(user.role === 'admin') {
+        if (user.role === 'admin') {
             return res.status(204).json({
                 status: 'No content',
                 message: 'Admin users do not have enrollments to display at this point'
@@ -127,7 +153,7 @@ export const getEnrollmentsById = async (req, res) => {
                     include: [
                         {
                             model: db.Class,
-                            attributes: ['title_class', 'description_class', 'level_class', 'is_blocked'],
+                            attributes: ['title_class', 'description_english', 'description_spanish', 'description_french', 'level_class', 'is_blocked'],
                             include: [
                                 {
                                     model: db.User, as: 'teacher',
