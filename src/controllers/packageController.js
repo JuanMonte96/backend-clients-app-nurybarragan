@@ -40,7 +40,11 @@ export const createPackage = async (req, res) => {
 
 export const getPackages = async (req, res) => {
     try {
-        const packages = await db.Package.findAll();
+        const packages = await db.Package.findAll({
+            where:{
+                availabilty: true
+            }
+        });
 
         if (packages.length === 0) {
             return res.status(204).json({
@@ -60,3 +64,32 @@ export const getPackages = async (req, res) => {
     }
 };
 
+export const avalibalityPackage = async (req,res) => {
+    try {
+        const { id } = req.params; 
+
+        const packageToupdateAvailability = await db.Package.findByPk(id);
+
+        if (!packageToupdateAvailability) {
+            return res.status(404).json({
+                status: 'Not found',
+                message: 'Package not found'
+            })
+        }
+
+        packageToupdateAvailability.availabilty = !packageToupdateAvailability.availabilty;
+        await packageToupdateAvailability.save(); 
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Package availability updated successfully',
+            package: packageToupdateAvailability
+        })
+    }
+    catch(error){
+        return res.status(500).json({
+            status: 'error',
+            message: error.message
+        })
+    }
+}

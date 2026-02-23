@@ -16,7 +16,11 @@ export const Package = sequelize.define('Package',
     duration_package: DataTypes.INTEGER,
     class_limit: DataTypes.INTEGER,
     stripe_product_id: DataTypes.TEXT,
-    stripe_price_id: DataTypes.TEXT
+    stripe_price_id: DataTypes.TEXT, 
+    availabilty: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
   },
   {
     tableName: 'packages',
