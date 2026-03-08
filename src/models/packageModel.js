@@ -16,10 +16,18 @@ export const Package = sequelize.define('Package',
     duration_package: DataTypes.INTEGER,
     class_limit: DataTypes.INTEGER,
     stripe_product_id: DataTypes.TEXT,
-    stripe_price_id: DataTypes.TEXT, 
+    stripe_price_id: DataTypes.TEXT,
+    is_recurrent: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
     availabilty: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    category: {
+      type: DataTypes.ENUM('premium','standard','basics'),
+      defaultValue: 'standard'
     }
   },
   {

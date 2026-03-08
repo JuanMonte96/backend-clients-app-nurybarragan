@@ -3,7 +3,7 @@ import { createProduct } from "../services/stripe.js";
 
 export const createPackage = async (req, res) => {
     try {
-        const { name, descriptionEnglish, descriptionSpanish, descriptionFrench, price, duration, class_limit } = req.body;
+        const { name, descriptionEnglish, descriptionSpanish, descriptionFrench, price, duration, class_limit, is_recurrent,category } = req.body;
         const Package = db.Package;
         const { stripeProduct, stripePrice, productFromStripe } = await createProduct({
             name,
@@ -19,6 +19,8 @@ export const createPackage = async (req, res) => {
             price_package: price,
             duration_package: duration,
             class_limit: class_limit,
+            is_recurrent: is_recurrent,
+            category: category,
             stripe_product_id: stripeProduct.id,
             stripe_price_id: stripePrice.id
         });
