@@ -1,11 +1,24 @@
 import { db } from "../models/db.js";
 import dotenv from 'dotenv'
 import QRcode from 'qrcode'
+import { Op } from "sequelize";
 import { localToUTC, utcToLocal, extractDateAndTime } from "../services/timezone.js";
 import { DateTime } from "luxon";
 
 dotenv.config()
 const API_URL = process.env.API_URL
+const FRONTEND_URL = process.env.FRONTEND_URL || process.env.APP_URL || null;
+
+const buildQrAttendanceUrl = (scheduleId) => {
+    const frontendBase = FRONTEND_URL?.replace(/\/$/, '');
+    const apiBase = API_URL?.replace(/\/$/, '');
+
+    if (frontendBase) {
+        return `${frontendBase}/attendance/scan/${scheduleId}`;
+    }
+
+    return `${apiBase}/api/attendance/scan-qr/${scheduleId}`;
+};
 
 export const createdScheduleTemplate = async (req, res) => {
     try {
@@ -134,7 +147,7 @@ export const createUnicSchedule = async (req, res) => {
             message: 'schedule was not created the good way please try it again'
         })
 
-        const qrUrl = `${API_URL}/api/attendance/scan-qr/${newSchedule.id_schedule}`;
+        const qrUrl = buildQrAttendanceUrl(newSchedule.id_schedule);
 
         const qrImage = await QRcode.toDataURL(qrUrl)
 
@@ -219,6 +232,7 @@ export const getScheduleById = async (req, res) => {
 export const getAllSchedulesByClass = async (req, res) => {
     try {
         const { classId } = req.params;
+        const { date, schedule_status = 'active' } = req.query;
         const userTimezone = req.user.timezone || 'Europe/Paris';
 
         if (!classId) {
@@ -237,18 +251,45 @@ export const getAllSchedulesByClass = async (req, res) => {
             })
         }
 
+        const whereSchedule = {
+            id_class: classId
+        };
+
+        if (schedule_status === 'active') {
+            whereSchedule.is_active = true;
+        } else if (schedule_status === 'inactive') {
+            whereSchedule.is_active = false;
+        }
+
+        if (date) {
+            const parsedDate = new Date(date);
+            if (Number.isNaN(parsedDate.getTime())) {
+                return res.status(400).json({
+                    status: 'Bad Request',
+                    message: 'Invalid date format. Use YYYY-MM-DD.'
+                })
+            }
+
+            const startDate = new Date(parsedDate);
+            startDate.setHours(0, 0, 0, 0);
+            const endDate = new Date(parsedDate);
+            endDate.setHours(23, 59, 59, 999);
+
+            whereSchedule.date_class = { [Op.between]: [startDate, endDate] };
+        }
+
         // Traer todos los horarios asociados a la clase
         const schedules = await db.ClassSchedule.findAll({
-            where: {
-                id_class: classId,
-                is_active: true
-            }
+            where: whereSchedule,
+            order: [['start_timestamp', 'ASC']]
         });
 
         if (!schedules || schedules.length === 0) {
-            return res.status(204).json({
-                status: 'No content',
-                message: 'No schedules found for this class'
+            return res.status(200).json({
+                status: 'Success',
+                message: 'No schedules found for this class',
+                total: 0,
+                schedules: []
             })
         }
 
@@ -301,7 +342,7 @@ export const qrAttendaceShow = async (req, res) => {
         }
 
         if (!schedule.qr_code_url) {
-            const qrUrl = `${API_URL}/api/attendance/scan-qr/${schedule.id_schedule}`;
+            const qrUrl = buildQrAttendanceUrl(schedule.id_schedule);
             const qrImage = await QRcode.toDataURL(qrUrl);
             await schedule.update({ qr_code_url: qrImage });
         }

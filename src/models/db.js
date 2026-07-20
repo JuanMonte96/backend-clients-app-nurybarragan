@@ -30,6 +30,15 @@ db.Subscription.belongsTo(db.User, {foreignKey:"id_user"});
 db.Package.hasMany(db.Subscription, {foreignKey: "id_package"});
 db.Subscription.belongsTo(db.Package, {foreignKey: "id_package"});
 
+db.User.hasMany(db.Payment, { foreignKey: "id_user" });
+db.Payment.belongsTo(db.User, { foreignKey: "id_user" });
+
+db.Package.hasMany(db.Payment, { foreignKey: "id_package" });
+db.Payment.belongsTo(db.Package, { foreignKey: "id_package" });
+
+db.Payment.hasMany(db.Subscription, { foreignKey: "id_payment" });
+db.Subscription.belongsTo(db.Payment, { foreignKey: "id_payment" });
+
 db.User.hasMany(db.ClassEnrollment, { foreignKey: "id_user" });
 db.ClassEnrollment.belongsTo(db.User, { foreignKey: "id_user" });
 
