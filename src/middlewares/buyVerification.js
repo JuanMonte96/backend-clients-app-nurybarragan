@@ -2,7 +2,7 @@ import { db } from '../models/db.js';
 
 export const userVerificationPackageBuy = async (req, res, next) => {
     try {
-        const { email, id_package} = req.validatedPayment;
+        const { email, id_package } = req.validatedPayment;
 
         const pkg = await db.Package.findByPk(id_package);
 
@@ -10,6 +10,20 @@ export const userVerificationPackageBuy = async (req, res, next) => {
             return res.status(404).json({
                 status: 'Not Found',
                 message: 'Package not found'
+            });
+        }
+
+        if (!pkg.availabilty) {
+            return res.status(409).json({
+                status: 'Conflict',
+                message: 'Package is not available for purchase'
+            });
+        }
+
+        if (!pkg.stripe_price_id) {
+            return res.status(409).json({
+                status: 'Conflict',
+                message: 'Package does not have a valid Stripe price configured'
             });
         }
 
@@ -30,6 +44,7 @@ export const userVerificationPackageBuy = async (req, res, next) => {
             }
         }
 
+    req.validatedPackage = pkg;
         next();
     } catch (error) {
         return res.status(500).json({

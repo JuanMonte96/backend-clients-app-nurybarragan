@@ -171,3 +171,29 @@ export const sendEmailApiGmail = async (to, name, tempPassword) => {
         console.error(`Error sending email with Gmail API: ${error}`);
     }
 }
+
+  export const sendScheduleCancellationEmail = async ({ to, userName, className, classDate, classTime }) => {
+    try {
+      const html = `<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1f2937;max-width:640px;margin:0 auto;padding:24px;background:#f8fafc;border-radius:16px;">
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;">
+    <h1 style="margin:0 0 16px;font-size:22px;color:#111827;">Annulation de votre cours</h1>
+    <p style="margin:0 0 16px;">Bonjour <strong>${userName}</strong>,</p>
+    <p style="margin:0 0 16px;">Nous vous informons que le cours <strong>${className}</strong>, prévu le <strong>${classDate}</strong> à <strong>${classTime}</strong>, a été annulé par l’administration.</p>
+    <p style="margin:0 0 16px;">Nous sommes désolés pour ce désagrément. Cette séance ne sera comptabilisée ni comme une présence ni comme une absence, et elle ne sera pas déduite de votre forfait.</p>
+    <p style="margin:0;">Merci de votre compréhension.<br />NB Dance & Fitness</p>
+    </div>
+  </div>`;
+
+      await transporter.sendMail({
+        from: `NB Dance & Fitness <${process.env.EMAIL_USER}>`,
+        to,
+        subject: 'Annulation de votre cours',
+        html,
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error(`Error sending cancellation email to ${to}:`, error);
+      return { success: false, error: error?.message || String(error) };
+    }
+  };

@@ -25,6 +25,17 @@ export const Package = sequelize.define('Package',
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
+    id_category: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'id_category'
+    },
+    order_visualization: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    // Legacy field: kept for backward compatibility during transition to id_category.
     category: {
       type: DataTypes.ENUM('premium','standard','basics'),
       defaultValue: 'standard'

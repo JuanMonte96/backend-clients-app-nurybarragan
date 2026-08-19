@@ -2,10 +2,6 @@ import { z, } from 'zod';
 
 // Schema de validación para compra de paquetes
 export const paymentPackageSchema = z.object({
-  stripe_price_id: z.string()
-    .min(1, 'The stripe_price_id is required')
-    .trim(),
-  
   name: z.string()
     .min(2, 'The name must have at least 2 characterers')
     .max(100, 'The name cannot exceed 100 characters')

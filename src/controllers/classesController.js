@@ -245,3 +245,70 @@ export const getAvailableClasses = async (req, res) => {
     })
   }
 }
+
+export const getClassById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const classData = await db.Class.findByPk(id, {
+      include: [{
+        model: db.User,
+        as: 'teacher',
+        attributes: ['id_user', 'name_user', 'email_user']
+      }]
+    });
+
+    if (!classData) {
+      return res.status(404).json({ status: 'Not Found', message: 'Class not found' });
+    }
+
+    const schedules = await db.ClassSchedule.findAll({
+      where: { id_class: id },
+      order: [['start_timestamp', 'ASC']]
+    });
+
+    const now = new Date();
+    const futureSchedules = schedules.filter((schedule) => new Date(schedule.start_timestamp) >= now);
+    const activeSchedules = schedules.filter((schedule) => schedule.is_active);
+
+    return res.status(200).json({
+      status: 'Success',
+      message: 'Class detail retrieved successfully',
+      class: classData,
+      metrics: {
+        total_schedules: schedules.length,
+        future_schedules: futureSchedules.length,
+        active_schedules: activeSchedules.length,
+      },
+      schedules,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: 'Internal Server Error', message: error.message });
+  }
+};
+
+export const toggleClassStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isBlocked } = req.body;
+
+    if (typeof isBlocked !== 'boolean') {
+      return res.status(400).json({ status: 'Bad Request', message: 'isBlocked must be boolean' });
+    }
+
+    const classToUpdate = await db.Class.findByPk(id);
+    if (!classToUpdate) {
+      return res.status(404).json({ status: 'Not Found', message: 'Class not found' });
+    }
+
+    await classToUpdate.update({ is_blocked: isBlocked });
+
+    return res.status(200).json({
+      status: 'Success',
+      message: isBlocked ? 'Class deactivated successfully' : 'Class activated successfully',
+      class: classToUpdate,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: 'Internal Server Error', message: error.message });
+  }
+};

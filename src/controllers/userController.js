@@ -738,13 +738,13 @@ export const getMedicalCertificateSignedUrl = async (req, res) => {
 };
 
 
-export const createUser = async (session) => {
+export const createUser = async (session, transaction) => {
 
     const email_user = session.customer_email;
     const name_user = session.metadata.name;
     const telephone_user = session.metadata.telephone;
 
-    let user = await db.User.findOne({ where: { email_user } });
+    let user = await db.User.findOne({ where: { email_user }, transaction });
 
     if (!user) {
         const { tempPassword, hashedPassword } = await createTempPassword();
@@ -755,7 +755,7 @@ export const createUser = async (session) => {
             telephone_user,
             password_user: hashedPassword,
             role: 'student'
-        });
+        }, { transaction });
 
         return ({
             id: user.id_user,

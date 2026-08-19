@@ -5,11 +5,10 @@ import { contactSchema } from '../validators/validateContact.js';
 
 export const validatePaymentMiddleware = (req, res, next) => {
     try {
-        const { stripe_price_id, name, email, id_package, telephone } = req.body;
+        const { name, email, id_package, telephone } = req.body;
 
         // Validar los datos
         const validation = validateData({
-            stripe_price_id,
             name,
             email,
             telephone,

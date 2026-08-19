@@ -72,9 +72,12 @@ Este documento normaliza el contrato entre frontend y backend para facilitar ver
 
 | Módulo | Método HTTP | Endpoint | Parámetros de ruta | Query parameters | Body esperado | Respuesta exitosa | Respuesta de error | Autenticación requerida | Rol requerido |
 |---|---|---|---|---|---|---|---|---|---|
-| Asistencia | POST | /api/attendance/scan-qr/:scheduleId | `scheduleId` | Ninguno | Body con `status` o payload equivalente | `201 { status, message, newAttendance }` | `400` fuera de ventana o duplicada, `401`, `403`, `404`, `500` | Sí | admin |
-| Asistencia | POST | /api/attendance/manual-attendance | Ninguno | Ninguno | `{ enrollmentId, userId, status }` | `201 { status, message, attendance }` | `400` duplicado, `401`, `403`, `404`, `500` | Sí | teacher, admin |
+| Asistencia | GET | /api/attendance/admin/roster/:scheduleId | `scheduleId` | `page`, `limit`, `enrollment_status`, `attendance_status`, `name`, `email` | Ninguno | `200 { status, message, page, limit, total, pages, summary, schedule, roster[] }` | `401`, `403`, `404`, `500` | Sí | admin, teacher |
+| Asistencia | POST | /api/attendance/scan-qr/:scheduleId | `scheduleId` | Ninguno | `{ status? }` (default `attended`) | `201 { status, message, newAttendance }` | `400` fuera de ventana o duplicada, `401`, `403`, `404`, `409`, `500` | Sí | autenticado (el usuario marca su propia asistencia; identidad tomada de `req.user.id`) |
+| Asistencia | POST | /api/attendance/manual-attendance | Ninguno | Ninguno | `{ enrollmentId, userId, status? }` | `201 { status, message, attendance }` | `400` duplicado, `401`, `403`, `404`, `409`, `500` | Sí | teacher, admin |
 | Asistencia | GET | /api/attendance/attendance-records | Ninguno | Ninguno | Ninguno | `200 { status, message, attenadanceByUser }` | `401`, `403`, `404`, `500` | Sí | student |
+
+Cada fila de `roster[]` contiene: `id_enrollment`, `id_user`, `user_name`, `user_email`, `enrollment_status`, `enrolled_at`, `attendance_status` (`pending|attended|no_show|excused`), `attendance_id`, `attendance_registered_at`, `registration_method` (`manual|qr|-`), `package_name`, `subscription_id`.
 
 ## Contacto
 
@@ -116,3 +119,11 @@ Este documento normaliza el contrato entre frontend y backend para facilitar ver
 - `classRemaining` depende de `req.user.id`, pero el controlador intenta leer también `req.params.id_user` que la ruta no expone.
 - `telephone_user` está modelado como `NUMBER`, pero el frontend y los validadores trabajan como cadena.
 - El contacto del frontend y backend coincide en la práctica, pero el nombre del service frontend está escrito como `contacService.js`.
+
+## Correcciones aplicadas (iteración módulo de asistencias/inscripciones)
+
+- **QR apuntaba al backend:** `scheduleController.buildQrAttendanceUrl` leía `FRONTEND_URL`/`APP_URL`, pero la variable real del `.env` es `URL_FRONTEND_BASE`. Se añadió esa variable con máxima prioridad, de modo que el QR ahora codifica `${URL_FRONTEND_BASE}/attendance/scan/:scheduleId` (ruta SPA de `QrAttendancePage`).
+- **QR se auto-regenera:** `qrAttendaceShow` (`GET /api/schedule/qr-schedule/:scheduleId`) ahora regenera el QR desde la URL correcta en cada consulta, auto-corrigiendo QRs antiguos y horarios creados por plantilla que se guardaron sin `qr_code_url`.
+- **Fecha de asistencia:** el modelo `Attendance` tenía `timestamps: false` sin declarar `created_at`/`updated_at`, por lo que el roster devolvía `attendance_registered_at: null`. Se habilitó `timestamps: true` mapeado a las columnas reales `created_at`/`updated_at`.
+- **Enum de inscripción:** el modelo `ClassEnrollment.status` se alineó con la DB (`active | blocked | removed`).
+- **`registration_method`** se infiere del estado de la inscripción (`removed` ⇒ `manual`, si hay asistencia con inscripción `active` ⇒ `qr`). Robusto para el flujo actual; para máxima trazabilidad futura convendría una columna `method` en `attendance` (requiere migración aditiva).

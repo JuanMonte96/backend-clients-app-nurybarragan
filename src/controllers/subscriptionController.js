@@ -1,8 +1,11 @@
 import { db } from "../models/db.js";
 
-export const createsubscription = async (user, payment, session) => {
+export const createsubscription = async (user, payment, session, transaction) => {
     try{
-        const id_user = user.id;
+        const id_user = user?.id_user || user?.id;
+        if (!id_user) {
+            throw new Error('User id is required to create Subscription');
+        }
         const id_package = session.metadata.custom_id;
         const id_payment = payment.id;
 
@@ -11,6 +14,12 @@ export const createsubscription = async (user, payment, session) => {
         if (!packageSubscribed){
             throw new Error('Paquete no encontrado');
         };
+
+        const existingSubscription = await db.Subscription.findOne({
+            where: { id_payment: payment.id },
+            transaction,
+        });
+        if (existingSubscription) return existingSubscription;
 
         const start_date = new Date(session.created * 1000);
         const daysDuration = packageSubscribed.duration_package;
@@ -24,12 +33,13 @@ export const createsubscription = async (user, payment, session) => {
             end_date,
             id_payment,
             status: 'active',
-        })
+        }, { transaction })
         
         return newSubscription;
 
     }
     catch(error){
         console.error("Error creating subscription:", error.message);
+        throw error;
     }
 }
