@@ -1,18 +1,19 @@
 import { validateData } from '../helpers/zodValidate.js';
-import { paymentPackageSchema } from '../validators/validatePackages.js';
+import { paymentPackageSchema, paymentPlanPackageSchema } from '../validators/validatePackages.js';
 import { loginSchema, passwordSchema } from '../validators/validateLogin.js';
 import { contactSchema } from '../validators/validateContact.js';
 
 export const validatePaymentMiddleware = (req, res, next) => {
     try {
-        const { name, email, id_package, telephone } = req.body;
+        const { name, email, id_package, telephone, payment_method } = req.body;
 
         // Validar los datos
         const validation = validateData({
             name,
             email,
             telephone,
-            id_package
+            id_package,
+            payment_method,
         }, paymentPackageSchema);
 
         if (!validation.success) {
@@ -30,6 +31,37 @@ export const validatePaymentMiddleware = (req, res, next) => {
         res.status(500).json({
             status: 'Internal Server Error',
             message: `Error validating payment data: ${error.message}`
+        });
+    }
+};
+
+export const validatePaymentPlanMiddleware = (req, res, next) => {
+    try {
+        const { name, email, id_package, telephone, installment_count, payment_method } = req.body;
+
+        const validation = validateData({
+            name,
+            email,
+            telephone,
+            id_package,
+            installment_count,
+            payment_method,
+        }, paymentPlanPackageSchema);
+
+        if (!validation.success) {
+            return res.status(400).json({
+                status: 'Validation Error',
+                errors: validation.errors
+            });
+        }
+
+        req.validatedPayment = validation.data;
+        next();
+
+    } catch (error) {
+        res.status(500).json({
+            status: 'Internal Server Error',
+            message: `Error validating payment plan data: ${error.message}`
         });
     }
 };

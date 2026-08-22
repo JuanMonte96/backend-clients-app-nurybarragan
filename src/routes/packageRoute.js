@@ -10,6 +10,8 @@ import {
 	getAdminCategoryList,
 	getAdminPackageById,
 	getAdminPackages,
+	getAdminPaymentPlanById,
+	getAdminPaymentPlans,
 	getPackages,
 	getPublicCatalog,
 	reorderAdminCategories,
@@ -47,3 +49,6 @@ packageRoute.patch('/admin/:id_package/availability', auth, authorize('admin'), 
 packageRoute.post('/admin/:id_package/retry-stripe-sync', auth, authorize('admin'), retryPackageStripeSync);
 
 packageRoute.post('/admin/backfill-id-category', auth, authorize('admin'), backfillPackageCategories);
+
+packageRoute.get('/admin/payment-plans/list', auth, authorize('admin'), getAdminPaymentPlans);
+packageRoute.get('/admin/payment-plans/:id_payment_plan', auth, authorize('admin'), getAdminPaymentPlanById);

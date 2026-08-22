@@ -43,3 +43,37 @@ export const createsubscription = async (user, payment, session, transaction) =>
         throw error;
     }
 }
+
+// Entitlement interno creado solo cuando la primera cuota de un Payment Plan
+// se confirma (no antes) para que el tiempo de uso del paquete empiece a
+// contar unicamente a partir de ese momento.
+export const createSubscriptionForPaymentPlan = async (user, paymentPlan, payment, transaction) => {
+    const id_user = user?.id_user || user?.id;
+    if (!id_user) {
+        throw new Error('User id is required to create Subscription');
+    }
+
+    const existingSubscription = await db.Subscription.findOne({
+        where: { id_payment: payment.id_payment },
+        transaction,
+    });
+    if (existingSubscription) return existingSubscription;
+
+    const packageSubscribed = await db.Package.findByPk(paymentPlan.id_package, { transaction });
+    if (!packageSubscribed) {
+        throw new Error('Paquete no encontrado');
+    }
+
+    const start_date = new Date();
+    const end_date = new Date(start_date);
+    end_date.setDate(end_date.getDate() + packageSubscribed.duration_package);
+
+    return db.Subscription.create({
+        id_user,
+        id_package: paymentPlan.id_package,
+        start_date,
+        end_date,
+        id_payment: payment.id_payment,
+        status: 'active',
+    }, { transaction });
+}

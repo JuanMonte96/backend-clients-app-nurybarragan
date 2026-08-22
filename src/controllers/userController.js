@@ -457,6 +457,19 @@ const getUserSubscriptionsData = async ({ id_user, page, limit }) => {
     };
 };
 
+const getUserPaymentPlansData = async ({ id_user }) => {
+    const paymentPlans = await db.PaymentPlan.findAll({
+        where: { id_user: String(id_user) },
+        include: [
+            { model: db.Package, attributes: ['id_package', 'name_package'] },
+            { model: db.PaymentPlanInstallment },
+        ],
+        order: [['created_at', 'DESC']],
+    });
+
+    return paymentPlans.map((plan) => plan.toJSON());
+};
+
 const getMedicalCertificateSummary = async ({ user }) => {
     const certificateKey = user.medical_certificated;
 
@@ -529,7 +542,7 @@ export const getUserDetail = async (req, res) => {
             });
         }
 
-        const [payments, subscriptions, certificate] = await Promise.all([
+        const [payments, subscriptions, certificate, paymentPlans] = await Promise.all([
             getUserPaymentsData({
                 id_user,
                 page: req.query.payment_page,
@@ -542,7 +555,8 @@ export const getUserDetail = async (req, res) => {
                 page: req.query.subscription_page,
                 limit: req.query.subscription_limit
             }),
-            getMedicalCertificateSummary({ user })
+            getMedicalCertificateSummary({ user }),
+            getUserPaymentPlansData({ id_user })
         ]);
 
         return res.status(200).json({
@@ -551,6 +565,7 @@ export const getUserDetail = async (req, res) => {
             user,
             subscriptions,
             payments,
+            paymentPlans,
             medicalCertificate: certificate
         });
     } catch (error) {
@@ -1123,6 +1138,49 @@ export const blockUser = async (req, res) => {
             status: 'error',
             message: `Internal Server Error: ${error.message}`
         })
+    }
+};
+
+// Bloqueo por impago de un Payment Plan: a diferencia de blockUser, NO cancela
+// las Subscriptions activas (para no perder la trazabilidad del entitlement),
+// ya que el bloqueo aqui es reversible manualmente por un admin.
+export const blockUserForPaymentDelinquency = async (id_user, transaction) => {
+    await db.User.update({ is_blocked: true }, { where: { id_user }, transaction });
+};
+
+// Accion manual de admin para bloquear/desbloquear a un usuario (usada para
+// revertir el bloqueo automatico por impago una vez el pago se reintenta y
+// se confirma). No toca Subscriptions ni Payment Plans.
+export const setUserBlockStatus = async (req, res) => {
+    try {
+        const { id_user } = req.params;
+        const { is_blocked } = req.body;
+
+        if (typeof is_blocked !== 'boolean') {
+            return res.status(400).json({
+                status: 'Bad Request',
+                message: 'is_blocked must be a boolean'
+            });
+        }
+
+        const user = await db.User.findByPk(id_user);
+        if (!user) {
+            return res.status(404).json({ status: 'Not Found', message: 'User not found' });
+        }
+
+        user.is_blocked = is_blocked;
+        await user.save();
+
+        return res.status(200).json({
+            status: 'success',
+            message: is_blocked ? 'User blocked successfully' : 'User unblocked successfully',
+            user: { id_user: user.id_user, is_blocked: user.is_blocked }
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 'error',
+            message: `Internal Server Error: ${error.message}`
+        });
     }
 };
 

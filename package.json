@@ -1,6 +1,6 @@
 {
   "name": "nuryb-app-backend",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "this is the beta app version of the nury barragan app project for the control of subscriptions for the dancing classes",
   "main": "index.js",
   "type": "module",

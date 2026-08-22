@@ -129,7 +129,16 @@ const serializePromotionSummary = (promotion) => ({
   description_french: promotion.description_french,
 });
 
-const serializePackage = (pkg, promotions = []) => ({
+const serializePaymentOption = (option) => ({
+  id_payment_option: option.id_payment_option,
+  payment_mode: option.payment_mode,
+  installment_count: option.installment_count,
+  interval_unit: option.interval_unit,
+  interval_count: option.interval_count,
+  currency: option.currency,
+});
+
+const serializePackage = (pkg, promotions = [], paymentOptions = []) => ({
   id_package: pkg.id_package,
   name_package: pkg.name_package,
   description_spanish: pkg.description_spanish,
@@ -150,7 +159,20 @@ const serializePackage = (pkg, promotions = []) => ({
     ? serializePromotionSummary(promotions.find((promotion) => promotion.promotion_type !== "NON_MONETARY"))
     : null,
   promotions: promotions.map(serializePromotionSummary),
+  payment_options: paymentOptions.map(serializePaymentOption),
 });
+
+const getEnabledPaymentOptionsByPackage = async () => {
+  const options = await db.PackagePaymentOption.findAll({ where: { enabled: true } });
+  const map = new Map();
+  options.forEach((option) => {
+    const key = String(option.id_package);
+    const current = map.get(key) || [];
+    current.push(option);
+    map.set(key, current);
+  });
+  return map;
+};
 
 const categoryNameWhere = (search) => ({
   [Op.or]: [
@@ -232,9 +254,11 @@ export const getPackages = async (_req, res) => {
       });
     }
 
+    const paymentOptionsByPackage = await getEnabledPaymentOptionsByPackage();
+
     return res.status(200).json({
       status: "success",
-      packages: packages.map(serializePackage),
+      packages: packages.map((pkg) => serializePackage(pkg, [], paymentOptionsByPackage.get(String(pkg.id_package)) || [])),
     });
   } catch (_error) {
     return res.status(500).json({ status: "error", message: "Failed to fetch packages" });
@@ -281,6 +305,8 @@ export const getPublicCatalog = async (_req, res) => {
       ...globalPromotions,
     ];
 
+    const paymentOptionsByPackage = await getEnabledPaymentOptionsByPackage();
+
     const activeCategories = await db.PackageCategory.findAll({
       where: { active: true },
       include: [
@@ -303,7 +329,11 @@ export const getPublicCatalog = async (_req, res) => {
       const category = categoryInstance.toJSON();
       categoryMap.set(category.id_category, {
         ...serializeCategory(category),
-        packages: (category.Packages || []).map((pkg) => serializePackage(pkg, promotionsForPackage(pkg))),
+        packages: (category.Packages || []).map((pkg) => serializePackage(
+          pkg,
+          promotionsForPackage(pkg),
+          paymentOptionsByPackage.get(String(pkg.id_package)) || []
+        )),
       });
     });
 
@@ -332,7 +362,11 @@ export const getPublicCatalog = async (_req, res) => {
         continue;
       }
 
-      categoryMap.get(idCategoryFromLegacy).packages.push(serializePackage(pkg, promotionsForPackage(pkg)));
+      categoryMap.get(idCategoryFromLegacy).packages.push(serializePackage(
+        pkg,
+        promotionsForPackage(pkg),
+        paymentOptionsByPackage.get(String(pkg.id_package)) || []
+      ));
     }
 
     const categories = [...categoryMap.values()]
@@ -1094,3 +1128,61 @@ export const backfillPackageCategories = async (_req, res) => {
     return res.status(500).json({ status: "error", message: "Failed to backfill categories" });
   }
 };
+
+// --- Admin: Payment Plans monitoring ---
+
+export const getAdminPaymentPlans = async (req, res) => {
+  try {
+    const { page, limit, status } = req.query;
+    const { page: finalPage, limit: finalLimit, offset } = parsePagination({ page, limit });
+
+    const where = status ? { status } : {};
+
+    const { rows, count } = await db.PaymentPlan.findAndCountAll({
+      where,
+      include: [
+        { model: db.User, attributes: ["id_user", "name_user", "email_user", "is_blocked"] },
+        { model: db.Package, attributes: ["id_package", "name_package"] },
+        { model: db.PaymentPlanInstallment },
+      ],
+      order: [["created_at", "DESC"]],
+      limit: finalLimit,
+      offset,
+      distinct: true,
+    });
+
+    return res.status(200).json({
+      status: "success",
+      payment_plans: rows,
+      pagination: { page: finalPage, limit: finalLimit, total: count },
+    });
+  } catch (_error) {
+    return res.status(500).json({ status: "error", message: "Failed to fetch payment plans" });
+  }
+};
+
+export const getAdminPaymentPlanById = async (req, res) => {
+  try {
+    const { id_payment_plan } = req.params;
+    if (!UUID_REGEX.test(id_payment_plan)) {
+      return res.status(400).json({ status: "error", message: "Invalid payment plan id" });
+    }
+
+    const paymentPlan = await db.PaymentPlan.findByPk(id_payment_plan, {
+      include: [
+        { model: db.User, attributes: ["id_user", "name_user", "email_user", "telephone_user", "is_blocked"] },
+        { model: db.Package, attributes: ["id_package", "name_package"] },
+        { model: db.PaymentPlanInstallment },
+      ],
+    });
+
+    if (!paymentPlan) {
+      return res.status(404).json({ status: "error", message: "Payment plan not found" });
+    }
+
+    return res.status(200).json({ status: "success", payment_plan: paymentPlan });
+  } catch (_error) {
+    return res.status(500).json({ status: "error", message: "Failed to fetch payment plan" });
+  }
+};
+

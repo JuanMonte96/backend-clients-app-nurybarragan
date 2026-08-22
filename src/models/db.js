@@ -15,6 +15,10 @@ import { PromotionPackage } from "./promotionPackageModel.js";
 import { PurchaseOrder } from "./purchaseOrderModel.js";
 import { PromotionRedemption } from "./promotionRedemptionModel.js";
 import { StripeEvent } from "./stripeEventModel.js";
+import { PackagePaymentOption } from "./packagePaymentOptionModel.js";
+import { PaymentPlan } from "./paymentPlanModel.js";
+import { PaymentPlanInstallment } from "./paymentPlanInstallmentModel.js";
+import { StripeCustomer } from "./stripeCustomerModel.js";
 
 export const db = {};
 
@@ -35,6 +39,10 @@ db.PromotionPackage = PromotionPackage;
 db.PurchaseOrder = PurchaseOrder;
 db.PromotionRedemption = PromotionRedemption;
 db.StripeEvent = StripeEvent;
+db.PackagePaymentOption = PackagePaymentOption;
+db.PaymentPlan = PaymentPlan;
+db.PaymentPlanInstallment = PaymentPlanInstallment;
+db.StripeCustomer = StripeCustomer;
 
 db.PackageCategory.hasMany(db.Package, { foreignKey: "id_category", sourceKey: "id_category" });
 db.Package.belongsTo(db.PackageCategory, { foreignKey: "id_category", targetKey: "id_category" });
@@ -102,3 +110,24 @@ db.PurchaseOrder.hasMany(db.PromotionRedemption, { foreignKey: "id_purchase_orde
 db.PromotionRedemption.belongsTo(db.PurchaseOrder, { foreignKey: "id_purchase_order" });
 db.Payment.hasMany(db.PromotionRedemption, { foreignKey: "id_payment" });
 db.PromotionRedemption.belongsTo(db.Payment, { foreignKey: "id_payment" });
+
+// --- Payment Plan (SEPA / installments) ---
+db.Package.hasMany(db.PackagePaymentOption, { foreignKey: "id_package" });
+db.PackagePaymentOption.belongsTo(db.Package, { foreignKey: "id_package" });
+
+db.User.hasOne(db.StripeCustomer, { foreignKey: "id_user" });
+db.StripeCustomer.belongsTo(db.User, { foreignKey: "id_user" });
+
+db.PurchaseOrder.hasOne(db.PaymentPlan, { foreignKey: "id_purchase_order" });
+db.PaymentPlan.belongsTo(db.PurchaseOrder, { foreignKey: "id_purchase_order" });
+db.User.hasMany(db.PaymentPlan, { foreignKey: "id_user" });
+db.PaymentPlan.belongsTo(db.User, { foreignKey: "id_user" });
+db.Package.hasMany(db.PaymentPlan, { foreignKey: "id_package" });
+db.PaymentPlan.belongsTo(db.Package, { foreignKey: "id_package" });
+db.Promotion.hasMany(db.PaymentPlan, { foreignKey: "id_promotion" });
+db.PaymentPlan.belongsTo(db.Promotion, { foreignKey: "id_promotion" });
+db.PackagePaymentOption.hasMany(db.PaymentPlan, { foreignKey: "id_payment_option" });
+db.PaymentPlan.belongsTo(db.PackagePaymentOption, { foreignKey: "id_payment_option" });
+
+db.PaymentPlan.hasMany(db.PaymentPlanInstallment, { foreignKey: "id_payment_plan" });
+db.PaymentPlanInstallment.belongsTo(db.PaymentPlan, { foreignKey: "id_payment_plan" });

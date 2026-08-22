@@ -79,6 +79,14 @@ export const sendContactNotificacion = async (name_client, email_client, telepho
 
 export const sendEmailApiGmail = async (to, name, tempPassword) => {
     try {
+    if (!to || !tempPassword) {
+      throw new Error('Recipient email and temporary password are required');
+    }
+
+    const sender = process.env.EMAIL_USER;
+    if (!sender) {
+      throw new Error('EMAIL_USER is not configured');
+    }
 
         const html = `<div style="background-color:#f4f6f8;padding:30px 0;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
@@ -145,6 +153,7 @@ export const sendEmailApiGmail = async (to, name, tempPassword) => {
 `;
 
         const message = [
+          `From: NB Dance & Fitness <${sender}>`,
             `To: ${to}`,
             `Subject: Bienvenido a nb dance & Fitness`,
             "MIME-Version: 1.0",
@@ -159,16 +168,26 @@ export const sendEmailApiGmail = async (to, name, tempPassword) => {
             .replace(/\//g, "_")
             .replace(/=+$/, "");
 
-        await gmail.users.messages.send({
+        const response = await gmail.users.messages.send({
             userId: "me",
             requestBody: {
                 raw: encodedMessage
             }
         });
-        console.log('Email send with success to', to);
+        console.log('[Email] Welcome email sent successfully', {
+          to,
+          messageId: response.data?.id || null,
+        });
+        return response.data;
     }
     catch (error) {
-        console.error(`Error sending email with Gmail API: ${error}`);
+        console.error('[Email] Gmail welcome email failed', {
+          to,
+          error: error?.message || String(error),
+          code: error?.code || null,
+          response: error?.response?.data || null,
+        });
+        throw new Error(`Error sending email with Gmail API: ${error?.message || String(error)}`);
     }
 }
 
@@ -197,3 +216,31 @@ export const sendEmailApiGmail = async (to, name, tempPassword) => {
       return { success: false, error: error?.message || String(error) };
     }
   };
+
+// Notificacion SEPA de "debito en curso" (requerida por la normativa SDD y
+// disparada por el evento payment_intent.processing de Stripe).
+export const sendPaymentPlanProcessingEmail = async ({ to, userName, packageName, amountLabel, installmentNumber, installmentCount }) => {
+  try {
+    const html = `<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1f2937;max-width:640px;margin:0 auto;padding:24px;background:#f8fafc;border-radius:16px;">
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;">
+    <h1 style="margin:0 0 16px;font-size:22px;color:#111827;">Prélèvement SEPA en cours</h1>
+    <p style="margin:0 0 16px;">Bonjour <strong>${userName}</strong>,</p>
+    <p style="margin:0 0 16px;">Nous vous informons qu’un prélèvement SEPA de <strong>${amountLabel}</strong> est en cours de traitement pour votre plan de paiement du forfait <strong>${packageName}</strong> (échéance ${installmentNumber}/${installmentCount}).</p>
+    <p style="margin:0 0 16px;">Ce prélèvement peut prendre quelques jours ouvrés avant d’être finalisé. Vous recevrez une confirmation dès que le paiement sera validé.</p>
+    <p style="margin:0;">Merci de votre confiance.<br />NB Dance & Fitness</p>
+    </div>
+  </div>`;
+
+    await transporter.sendMail({
+      from: `NB Dance & Fitness <${process.env.EMAIL_USER}>`,
+      to,
+      subject: 'Prélèvement SEPA en cours',
+      html,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error(`Error sending payment plan processing email to ${to}:`, error);
+    return { success: false, error: error?.message || String(error) };
+  }
+};
